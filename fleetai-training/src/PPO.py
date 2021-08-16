@@ -40,6 +40,26 @@ class ActorBase(nn.Module):
         raise NotImplementedError
 
 
+class MultiDiscActor(ActorBase):
+    def __init__(self, device, state_dim, action_dims, layers=(64,64)):
+        super().__init__()
+        self.base_net = _create_network((state_dim,) + layers, end_activation=nn.Tanh).to(device)
+        self.outputs = nn.ModuleList()
+        for n in action_dims:
+            self.outputs.append(nn.Linear(layers[-1], n).to(device))
+
+    def _distribution(self, state):
+        base_out = self.base_net(state)
+        logits = np.array([output(base_out) for output in self.outputs])
+        return Categorical(logits=logits)
+
+    def _log_prob(self, dist, actions):
+        return dist.log_prob(actions).sum(axis=-1).unsqueeze(-1)
+
+    def greedy(self, state):
+        return self._distribution(state).probs.argmax(dim=-1)
+
+
 class DiscActor(ActorBase):
     def __init__(self, device, state_dim, action_dim, layers=(64,64)):
         super().__init__()
@@ -150,7 +170,7 @@ class PPO(AgentBase):
         if critic_kwargs is None:
             critic_kwargs = {}
 
-        actor_map = {"cont": ContActor, "disc": DiscActor, "cont-scaled": ContScaledActor}
+        actor_map = {"cont": ContActor, "disc": DiscActor, "cont-scaled": ContScaledActor, "multi-disc": MultiDiscActor}
         self.actor = actor_map[actor_type.lower()](device, state_dim, **actor_kwargs).to(device)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
         self.critic = Critic(device, state_dim, **critic_kwargs)
