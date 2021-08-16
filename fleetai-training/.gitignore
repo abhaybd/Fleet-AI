@@ -1,4 +1,6 @@
 config/*
+runs/*
+models/*
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,venv,windows,pycharm

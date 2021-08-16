@@ -85,7 +85,7 @@ class BattleshipEnv(gym.Env):
                         self.board[r, c] = ship
                         r += dr
                         c += dc
-
+        return self._observe()
 
 if __name__ == "__main__":
     be = BattleshipEnv("flat-ships")

@@ -6,6 +6,7 @@ from torch import nn
 from torch.distributions import Categorical, Normal
 
 from AgentBase import AgentBase
+from MultiCategorical import MultiCategorical
 
 """
 Implements PPO, with some tricks
@@ -43,6 +44,7 @@ class ActorBase(nn.Module):
 class MultiDiscActor(ActorBase):
     def __init__(self, device, state_dim, action_dims, layers=(64,64)):
         super().__init__()
+        self.device = device
         self.base_net = _create_network((state_dim,) + layers, end_activation=nn.Tanh).to(device)
         self.outputs = nn.ModuleList()
         for n in action_dims:
@@ -50,14 +52,19 @@ class MultiDiscActor(ActorBase):
 
     def _distribution(self, state):
         base_out = self.base_net(state)
-        logits = np.array([output(base_out) for output in self.outputs])
-        return Categorical(logits=logits)
+        dists = [Categorical(logits=layer(base_out)) for layer in self.outputs]
+        return MultiCategorical(dists)
 
     def _log_prob(self, dist, actions):
-        return dist.log_prob(actions).sum(axis=-1).unsqueeze(-1)
+        return dist.log_prob(actions).unsqueeze(-1)
 
     def greedy(self, state):
-        return self._distribution(state).probs.argmax(dim=-1)
+        return self._distribution(state).argmax()
+
+    def to(self, device):
+        super().to(device)
+        self.device = device
+        return self
 
 
 class DiscActor(ActorBase):
