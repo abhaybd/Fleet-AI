@@ -32,7 +32,8 @@ class BattleshipEnv(gym.Env):
         return obs
 
     def _done(self):
-        return (self.board == (self.board & self.shots)).all()
+        board = self.board.astype(bool)
+        return (board == (board & self.shots)).all()
 
     def step(self, action):
         row, col = action
@@ -89,10 +90,11 @@ class BattleshipEnv(gym.Env):
 
 if __name__ == "__main__":
     be = BattleshipEnv("flat-ships")
-    # be.shots = be.board.astype(bool)
-    be.shots = np.random.randn(*be.shots.shape) >= 0
+    be.shots = be.board.astype(bool)
+    # be.shots = np.random.randn(*be.shots.shape) >= 0
     print(be.render("ansi"))
     print(be.board)
     state = be._observe()
     print(f"Dim: {state.shape}")
     print(state[-5:])
+    print(be._done())
