@@ -1,14 +1,24 @@
+from typing import Any
+
 import numpy as np
 import gym
 
 
 class BattleshipEnv(gym.Env):
-    def __init__(self, observation_space="flat-ships", size=10, ships=(1, 2, 3, 4, 5)):
+    def __init__(self, observation_space="flat-ships", action_space="coords", size=10, ships=(1, 2, 3, 4, 5)):
         self.board = np.zeros((size, size), dtype=np.int8)
         self.ship_lens = sorted(ships)
         self.shots = np.zeros_like(self.board, dtype=bool)
         self.observation_space_type = observation_space
-        self.action_space = gym.spaces.MultiDiscrete((size, size))
+        self.action_space_type = action_space
+
+        if action_space == "coords":
+            self.action_space = gym.spaces.MultiDiscrete((size, size))
+        elif action_space == "flat":
+            self.action_space = gym.spaces.Discrete(size * size)
+        else:
+            raise Exception(f"Unrecognized action space {action_space}")
+
         if observation_space == "flat":
             self.observation_space = gym.spaces.MultiBinary(2 * size * size)
         elif observation_space == "flat-ships":
@@ -35,8 +45,14 @@ class BattleshipEnv(gym.Env):
         board = self.board.astype(bool)
         return (board == (board & self.shots)).all()
 
-    def step(self, action):
-        row, col = action
+    def step(self, action: Any):
+        if self.action_space_type == "coords":
+            row, col = action
+        elif self.action_space_type == "flat":
+            row = action // self.board.shape[0]
+            col = action % self.board.shape[1]
+        else:
+            raise AssertionError
         if self.shots[row, col]:
             reward = -1
         else:

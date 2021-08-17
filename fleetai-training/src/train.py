@@ -53,10 +53,10 @@ def load_agent(args, agent):
         raise Exception("Resume flag specified, but no model found.")
 
 def create_env_fn(args):
-    return lambda: BattleshipEnv(observation_space=args["env"]["state_space"])
+    return lambda: BattleshipEnv(observation_space=args["env"]["state_space"],
+                                 action_space=args["env"]["action_space"])
 
 def create_agent_from_args(device, args, env):
-    actor_kwargs = dict(layers=(256,256), action_dims=env.action_space.nvec)
     args_training = args["training"]
     args_ppo = args_training["ppo"]
     kwargs = dict(discount=args_training["discount"],
@@ -67,6 +67,13 @@ def create_agent_from_args(device, args, env):
                   entropy_coeff=args_ppo["entropy_coeff"],
                   target_kl=args_ppo["target_kl"],
                   actor_type=args["agent"]["actor_type"])
+    act_space = args["env"]["action_space"]
+    if act_space == "coords":
+        actor_kwargs = dict(layers=(256,256), action_dims=env.action_space.nvec)
+    elif act_space == "flat":
+        actor_kwargs = dict(layers=(256,256), action_dim=env.action_space.n)
+    else:
+        raise AssertionError
     return PPO(device, env.observation_space.shape[0], actor_kwargs=actor_kwargs, **kwargs), False
 
 
