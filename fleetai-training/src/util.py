@@ -2,12 +2,15 @@ from functools import partial
 
 import numpy as np
 
-from PPOBuffer import PPOBuffer
+from ppo import PPOBuffer
 from vec_env import DummyVecEnv, SubprocVecEnv
+
 
 def pretty_dict(d, float_fmt="%.6f"):
     return ', '.join(
-        [f'{k}={float_fmt % v}' if isinstance(v, float) else f'{k}={v:.0f}' for k, v in sorted(d.items(), key=lambda x: x[0])])
+        [f'{k}={float_fmt % v}' if isinstance(v, float) else f'{k}={v:.0f}'
+         for k, v in sorted(d.items(), key=lambda x: x[0])])
+
 
 def collect_trajectories(env, n_samples, device, policy, value_fn, max_steps=500):
     buf = PPOBuffer()
@@ -40,6 +43,7 @@ def collect_trajectories(env, n_samples, device, policy, value_fn, max_steps=500
         "last_rew_avg": np.mean(last_rews)
     }
     return buf.get(device), rollout_info
+
 
 def collect_trajectories_vec_env(vec_env, n_samples, device, policy, value_fn, max_steps=500,
                                  policy_accepts_batch=False):
@@ -98,6 +102,7 @@ def collect_trajectories_vec_env(vec_env, n_samples, device, policy, value_fn, m
     }
     return buf.get(device), rollout_info
 
+
 def run_evaluation(env_fn, n_trajectories, policy, max_steps=500, render_callback=None, policy_accepts_batch=False):
     if n_trajectories == 1:
         env = DummyVecEnv([env_fn])
@@ -123,7 +128,7 @@ def run_evaluation(env_fn, n_trajectories, policy, max_steps=500, render_callbac
         actions = policy(states)
         states, rewards, dones, _ = env.step(actions)
         mask = ~finished
-        sum_rews[mask] += rewards[mask] # add rewards to unfinished trajectories
+        sum_rews[mask] += rewards[mask]  # add rewards to unfinished trajectories
         steps[mask] += 1
         last_rews[mask] = rewards[mask]
         finished = finished | dones | (steps == max_steps)

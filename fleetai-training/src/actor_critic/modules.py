@@ -3,7 +3,7 @@ from torch import nn
 from torch.distributions import Categorical, Normal
 import numpy as np
 
-from MultiCategorical import MultiCategorical
+from .MultiCategorical import MultiCategorical
 
 
 def _create_network(layer_sizes, activation=nn.Tanh, end_activation=nn.Identity):

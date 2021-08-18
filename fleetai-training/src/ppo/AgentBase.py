@@ -1,5 +1,6 @@
 import torch
 
+
 class AgentBase(object):
     def __init__(self, *args):
         self.init_args = args
@@ -25,7 +26,7 @@ class AgentBase(object):
         pass
 
     def select_action(self, state):
-        raise Exception("Not implemented!")
+        raise NotImplementedError
 
     def copy(self):
         constructor = type(self)
@@ -37,13 +38,13 @@ class AgentBase(object):
         self.total_it = other.total_it
 
     def copy_on(self, device):
-        raise Exception("Not implemented!")
+        raise NotImplementedError
 
     def save(self, filename):
-        raise Exception("Not implemented!")
+        raise NotImplementedError
 
     def load(self, filename):
-        raise Exception("Not implemented!")
+        raise NotImplementedError
 
     def train(self, sample):
         raise NotImplementedError

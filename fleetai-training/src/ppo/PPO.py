@@ -3,10 +3,8 @@ import scipy.signal
 
 import torch
 from torch import nn
-from torch.distributions import Categorical, Normal
 
-from AgentBase import AgentBase
-from MultiCategorical import MultiCategorical
+from .AgentBase import AgentBase
 
 """
 Implements PPO, with some tricks

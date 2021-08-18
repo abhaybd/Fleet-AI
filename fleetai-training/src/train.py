@@ -10,10 +10,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 from vec_env import DummyVecEnv, SubprocVecEnv
 
-from PPO import PPO
+from ppo import PPO
+from actor_critic import MultiDiscActor, DiscActor, Critic
 from env import BattleshipEnv
 from util import collect_trajectories_vec_env, run_evaluation, pretty_dict
-from modules import MultiDiscActor, DiscActor, Critic
 
 
 def parse_args():
