@@ -1,7 +1,6 @@
 import yaml
 import argparse
 import os
-from functools import partial
 from itertools import chain
 
 import numpy as np
@@ -9,11 +8,12 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from vec_env import DummyVecEnv, SubprocVecEnv
-
+from actor_critic import MultiDiscActor, Critic
 from ppo import PPO
-from actor_critic import MultiDiscActor, DiscActor, Critic
+
+from BattleshipActor import BattleshipActor
 from env import BattleshipEnv
-from util import collect_trajectories_vec_env, run_evaluation, pretty_dict
+from util import collect_trajectories_vec_env, run_evaluation_seq, pretty_dict
 
 
 def parse_args():
@@ -71,7 +71,7 @@ def create_agent_from_args(device, args, env):
                                               env.action_space.nvec, layers=(256, 256))
     elif act_space == "flat":
         assert actor_type == "disc", "flat action space requires disc agent"
-        actor_fn = lambda dev: DiscActor(dev, env.observation_space.shape[0], env.action_space.n, layers=(256, 256))
+        actor_fn = lambda dev: BattleshipActor(dev, env.observation_space.shape[0], env.action_space.n)
     else:
         raise AssertionError
     critic_fn = lambda dev: Critic(dev, env.observation_space.shape[0], layers=(256, 256))
@@ -84,6 +84,20 @@ def create_agent_from_args(device, args, env):
               entropy_coeff=args_ppo["entropy_coeff"],
               target_kl=args_ppo["target_kl"])
     return ppo
+
+
+def run_eval(env_fn, actor: BattleshipActor, n_ep, max_steps):
+    env = env_fn()
+
+    def select_action(state):
+        probs = actor.probs(state).flatten().detach().cpu().numpy()
+        options = reversed(sorted(list(enumerate(probs)), key=lambda e: e[1]))
+        for action, prob in options:
+            if env.can_move(action):
+                return action
+        raise AssertionError
+
+    return run_evaluation_seq(lambda: env, n_ep, select_action, max_steps)
 
 
 def main():
@@ -112,14 +126,8 @@ def main():
 
     save_agent(args, agent)
     while agent.total_it < args["training"]["total_steps"]:
-        def select_action(greedy, s):
-            if greedy:
-                return agent.select_action_greedy(s)
-            else:
-                return agent.select_action(s)
-
         sample, rollout_info = collect_trajectories_vec_env(env, args["training"]["train_samples"], device,
-                                                            partial(select_action, False), agent.get_value,
+                                                            agent.select_action, agent.get_value,
                                                             max_steps=args["env"]["max_steps"],
                                                             policy_accepts_batch=False)
         train_info = agent.train(sample, actor_steps=args["training"]["ppo"]["actor_steps"],
@@ -131,8 +139,7 @@ def main():
 
         # launch eval
         if args["eval"]["eval_interval"] != -1 and agent.total_it % args["eval"]["eval_interval"] == 0:
-            eval_info = run_evaluation(env_fn, args["eval"]["num_ep"],
-                                       partial(select_action, True), max_steps=args["env"]["max_steps"])
+            eval_info = run_eval(env_fn, agent.actor, args["eval"]["num_ep"], args["env"]["max_steps"])
             for name, val in eval_info.items():
                 writer.add_scalar(f"Eval/{name}", val, agent.total_it)
             print(f"Evaluation - {pretty_dict(eval_info)}")

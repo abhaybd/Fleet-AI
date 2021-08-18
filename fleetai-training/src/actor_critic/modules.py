@@ -6,7 +6,7 @@ import numpy as np
 from .MultiCategorical import MultiCategorical
 
 
-def _create_network(layer_sizes, activation=nn.Tanh, end_activation=nn.Identity):
+def create_network(layer_sizes, activation=nn.Tanh, end_activation=nn.Identity):
     layers = []
     for i in range(len(layer_sizes) - 1):
         act = activation if i < len(layer_sizes)-2 else end_activation
@@ -36,7 +36,7 @@ class MultiDiscActor(ActorBase):
     def __init__(self, device, state_dim, action_dims, layers=(64,64)):
         super().__init__()
         self.device = device
-        self.base_net = _create_network((state_dim,) + layers, end_activation=nn.Tanh).to(device)
+        self.base_net = create_network((state_dim,) + layers, end_activation=nn.Tanh).to(device)
         self.outputs = nn.ModuleList()
         for n in action_dims:
             self.outputs.append(nn.Linear(layers[-1], n).to(device))
@@ -61,7 +61,7 @@ class MultiDiscActor(ActorBase):
 class DiscActor(ActorBase):
     def __init__(self, device, state_dim, action_dim, layers=(64,64)):
         super().__init__()
-        self.logits_net = _create_network((state_dim,) + layers + (action_dim,)).to(device)
+        self.logits_net = create_network((state_dim,) + layers + (action_dim,)).to(device)
 
     def _distribution(self, state):
         output = self.logits_net(state)
@@ -81,7 +81,7 @@ class ContScaledActor(ActorBase):
         assert min_action.shape == max_action.shape
 
         action_dim = max_action.shape[0]
-        self.layers = _create_network((state_dim,) + layers + (action_dim,), end_activation=nn.Tanh)
+        self.layers = create_network((state_dim,) + layers + (action_dim,), end_activation=nn.Tanh)
         self.min_action = torch.tensor(min_action, dtype=torch.float32, device=device)
         self.max_action = torch.tensor(max_action, dtype=torch.float32, device=device)
         log_std = torch.tensor(np.log(std), dtype=torch.float32, device=device).expand((action_dim,)).clone()
@@ -114,7 +114,7 @@ class ContActor(ActorBase):
     def __init__(self, device, state_dim, action_dim, std=0.6, layers=(64, 64)):
         super(ContActor, self).__init__()
 
-        self.layers = _create_network((state_dim,) + layers + (action_dim,)).to(device)
+        self.layers = create_network((state_dim,) + layers + (action_dim,)).to(device)
 
         log_std = torch.tensor(np.log(std), dtype=torch.float32, device=device).expand((action_dim,)).clone()
         self.log_std = nn.Parameter(log_std)
@@ -137,7 +137,7 @@ class Critic(nn.Module):
     def __init__(self, device, state_dim, layers=(64, 64)):
         super().__init__()
 
-        self.v_net = _create_network((state_dim,) + layers + (1,)).to(device)
+        self.v_net = create_network((state_dim,) + layers + (1,)).to(device)
 
     def forward(self, state):
         return self.v_net(state)

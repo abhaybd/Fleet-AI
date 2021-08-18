@@ -60,6 +60,16 @@ class BattleshipEnv(gym.Env):
             self.shots[row, col] = True
         return self._observe(), reward, self._done(), {}
 
+    def can_move(self, action: Any):
+        if self.action_space_type == "coords":
+            row, col = action
+        elif self.action_space_type == "flat":
+            row = action // self.board.shape[0]
+            col = action % self.board.shape[1]
+        else:
+            raise AssertionError
+        return not self.shots[row, col]
+
     def render(self, mode='human'):
         if mode == "ansi":
             rendered = "\u250E" + ("\u2500" * self.board.shape[1]) + "\u2512\n"
