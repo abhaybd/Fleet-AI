@@ -13,6 +13,8 @@ from vec_env import DummyVecEnv, SubprocVecEnv
 from PPO import PPO
 from env import BattleshipEnv
 from util import collect_trajectories_vec_env, run_evaluation, pretty_dict
+from modules import MultiDiscActor, DiscActor, Critic
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -52,29 +54,36 @@ def load_agent(args, agent):
     elif resume and not file_exists:
         raise Exception("Resume flag specified, but no model found.")
 
+
 def create_env_fn(args):
     return lambda: BattleshipEnv(observation_space=args["env"]["state_space"],
                                  action_space=args["env"]["action_space"])
 
+
 def create_agent_from_args(device, args, env):
     args_training = args["training"]
     args_ppo = args_training["ppo"]
-    kwargs = dict(discount=args_training["discount"],
-                  gae_lam=args_ppo["gae_lam"],
-                  clip_ratio=args_ppo["clip_ratio"],
-                  actor_learning_rate=args_ppo["actor_learning_rate"],
-                  critic_learning_rate=args_ppo["critic_learning_rate"],
-                  entropy_coeff=args_ppo["entropy_coeff"],
-                  target_kl=args_ppo["target_kl"],
-                  actor_type=args["agent"]["actor_type"])
     act_space = args["env"]["action_space"]
+    actor_type = args["agent"]["actor_type"]
     if act_space == "coords":
-        actor_kwargs = dict(layers=(256,256), action_dims=env.action_space.nvec)
+        assert actor_type == "multi-disc", "coords action space requires multi-disc agent"
+        actor_fn = lambda dev: MultiDiscActor(dev, env.observation_space.shape[0],
+                                              env.action_space.nvec, layers=(256, 256))
     elif act_space == "flat":
-        actor_kwargs = dict(layers=(256,256), action_dim=env.action_space.n)
+        assert actor_type == "disc", "flat action space requires disc agent"
+        actor_fn = lambda dev: DiscActor(dev, env.observation_space.shape[0], env.action_space.n, layers=(256, 256))
     else:
         raise AssertionError
-    return PPO(device, env.observation_space.shape[0], actor_kwargs=actor_kwargs, **kwargs), False
+    critic_fn = lambda dev: Critic(dev, env.observation_space.shape[0], layers=(256, 256))
+    ppo = PPO(device=device, actor_fn=actor_fn, critic_fn=critic_fn,
+              discount=args_training["discount"],
+              gae_lam=args_ppo["gae_lam"],
+              clip_ratio=args_ppo["clip_ratio"],
+              actor_learning_rate=args_ppo["actor_learning_rate"],
+              critic_learning_rate=args_ppo["critic_learning_rate"],
+              entropy_coeff=args_ppo["entropy_coeff"],
+              target_kl=args_ppo["target_kl"])
+    return ppo
 
 
 def main():
@@ -96,7 +105,7 @@ def main():
     else:
         env = SubprocVecEnv([env_fn] * args["training"]["num_procs"])
 
-    agent, continuous = create_agent_from_args(device, args, env)
+    agent = create_agent_from_args(device, args, env)
     load_agent(args, agent)
 
     writer = SummaryWriter(comment=f"_{args['agent']['model_name']}")
@@ -111,7 +120,8 @@ def main():
 
         sample, rollout_info = collect_trajectories_vec_env(env, args["training"]["train_samples"], device,
                                                             partial(select_action, False), agent.get_value,
-                                                            max_steps=args["env"]["max_steps"], policy_accepts_batch=False)
+                                                            max_steps=args["env"]["max_steps"],
+                                                            policy_accepts_batch=False)
         train_info = agent.train(sample, actor_steps=args["training"]["ppo"]["actor_steps"],
                                  critic_steps=args["training"]["ppo"]["critic_steps"])
 
@@ -130,7 +140,7 @@ def main():
         if agent.total_it % args["training"]["save_interval"] == 0:
             save_agent(args, agent)
     save_agent(args, agent)
-    env.close() # cleanup env
+    env.close()
     print("Finished training!")
 
 
