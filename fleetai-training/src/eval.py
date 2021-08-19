@@ -35,7 +35,7 @@ def main():
 
     env_fn = create_env_fn(config)
     env = env_fn()
-    device = torch.device("cuda")
+    device = torch.device("cpu")
     agent = create_agent_from_args(device, config, env)
 
     model_path = os.path.join(args.model_dir, f"{config['agent']['algo']}.pt")

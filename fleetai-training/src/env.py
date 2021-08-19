@@ -57,7 +57,7 @@ class BattleshipEnv(gym.Env):
         if self.shots[row, col]:
             reward = -1
         else:
-            reward = 1 if self.board[row, col] else 0
+            reward = 1 if self.board[row, col] else -0.15
             self.shots[row, col] = True
         return self._observe(), reward, self._done(), {}
 
