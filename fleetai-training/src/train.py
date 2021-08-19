@@ -74,7 +74,11 @@ def main():
     agent = create_agent_from_args(device, args, env)
     load_agent(args, agent)
 
-    writer = SummaryWriter(comment=f"_{args['agent']['model_name']}")
+    if "log_dir" in args:
+        writer = SummaryWriter(log_dir=args["log_dir"])
+    else:
+        writer = SummaryWriter(comment=f"_{args['agent']['model_name']}")
+        args["log_dir"] = writer.log_dir
 
     save_agent(args, agent)
     while agent.total_it < args["training"]["total_steps"]:
