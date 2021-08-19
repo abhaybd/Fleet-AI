@@ -140,7 +140,7 @@ def run_evaluation(env_fn, n_trajectories, policy, max_steps=500, render_callbac
                 norm_rew_avg=np.mean(np.array(sum_rews)/np.array(steps)))
 
 
-def run_evaluation_seq(env_fn, n_trajectories, policy, max_steps=500, render_callback=None):
+def run_evaluation_seq(env_fn, n_trajectories, policy, max_steps=500, render_callback=None, reduce_info=True):
     env = env_fn()
     traj_rews = []
     traj_lens = []
@@ -162,7 +162,10 @@ def run_evaluation_seq(env_fn, n_trajectories, policy, max_steps=500, render_cal
         traj_rews.append(np.sum(rewards))
     if render_callback is not None:
         env.close()
-    return dict(sum_rew_avg=np.mean(traj_rews), sum_rew_std=np.std(traj_rews),
-                sum_rew_min=np.min(traj_rews), sum_rew_max=np.max(traj_rews),
-                traj_len_avg=np.mean(traj_lens), last_rew_avg=np.mean(last_rews),
-                norm_rew_avg=np.mean(np.array(traj_rews)/np.array(traj_lens)))
+    if reduce_info:
+        return dict(sum_rew_avg=np.mean(traj_rews), sum_rew_std=np.std(traj_rews),
+                    sum_rew_min=np.min(traj_rews), sum_rew_max=np.max(traj_rews),
+                    traj_len_avg=np.mean(traj_lens), last_rew_avg=np.mean(last_rews),
+                    norm_rew_avg=np.mean(np.array(traj_rews)/np.array(traj_lens)))
+    else:
+        return dict(traj_lens=traj_lens, traj_rews=traj_rews, last_rews=last_rews)

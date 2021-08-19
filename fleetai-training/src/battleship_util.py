@@ -6,7 +6,7 @@ from env import BattleshipEnv
 from util import run_evaluation_seq
 
 
-def run_eval(env_fn, actor: BattleshipActor, n_ep, max_steps, render_callback=None):
+def run_eval(env_fn, actor: BattleshipActor, n_ep, max_steps, render_callback=None, reduce_info=True):
     env = env_fn()
 
     def select_action(state):
@@ -17,7 +17,8 @@ def run_eval(env_fn, actor: BattleshipActor, n_ep, max_steps, render_callback=No
                 return action
         raise AssertionError
 
-    return run_evaluation_seq(lambda: env, n_ep, select_action, max_steps=max_steps, render_callback=render_callback)
+    return run_evaluation_seq(lambda: env, n_ep, select_action, max_steps=max_steps,
+                              render_callback=render_callback, reduce_info=reduce_info)
 
 
 def create_env_fn(args):

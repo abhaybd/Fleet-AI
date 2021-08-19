@@ -5,6 +5,7 @@ from time import sleep
 import torch
 import yaml
 import numpy as np
+import matplotlib.pyplot as plt
 
 from util import pretty_dict
 from battleship_util import create_agent_from_args, create_env_fn, run_eval
@@ -21,8 +22,8 @@ def parse_args():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-r", "--render", action="store_true",
                        help="Render to screen (mutually exclusive with -v)")
-    # group.add_argument("-v", "--video_path", type=str,
-    #                    help="Render to a .webm video and save to this path (mutually exlusive with -r)")
+    group.add_argument("-hg", "--histogram", action="store_true",
+                       help="Plot histograms of data")
     args = parser.parse_args()
 
     cfg_path = os.path.join(args.model_dir, "config.yaml")
@@ -65,34 +66,29 @@ def main():
             print("Render flag specified, but rendering not possible! Running without rendering...")
         finally:
             env.close()
-    # elif args.video_path is not None:
-    #     import cv2
-    #     size = (1080, 720)
-    #     fps = round(1 / env.control_dt)
-    #     out = cv2.VideoWriter(args.video_path, cv2.VideoWriter_fourcc(*"VP80"), fps, size)
-    #     render_callback = lambda e: out.write(
-    #         cv2.resize(cv2.cvtColor(e.render(mode="rgb_array"), cv2.COLOR_RGB2BGR), size))
-    #     def end():
-    #         out.release()
-    #         vid_dir = os.path.dirname(args.video_path)
-    #         vid_name = os.path.basename(args.video_path)
-    #         hostname = socket.gethostbyaddr(socket.gethostname())[0]
-    #         port = 8000
-    #         print(f"You can view the created video at http://{hostname}:{port}/{vid_name}")
-    #         subproc = subprocess.Popen(["python", "-m", "http.server", "--directory", vid_dir, str(port)],
-    #                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    #         def kill_handler(*_):
-    #             print("\b\bQuitting...")
-    #             subproc.kill()
-    #         signal.signal(signal.SIGINT, kill_handler)
-    #         subproc.wait()
-    #     cleanup_callback = end
 
-    eval_info = run_eval(env_fn, agent.actor, args.num_eval, args.max_steps, render_callback=render_callback)
-    # eval_info = run_evaluation_seq(env_fn, n_trajectories=args.num_eval, )
-    # eval_info = run_evaluation(env_fn, args.num_eval, policy, max_steps=args.max_steps,
-    #                            render_callback=render_callback)
-    print("\n\n" + pretty_dict(eval_info, float_fmt="%.2f") + "\n\n")
+    if not args.histogram:
+        eval_info = run_eval(env_fn, agent.actor, args.num_eval, args.max_steps, render_callback=render_callback)
+        print("\n\n" + pretty_dict(eval_info, float_fmt="%.2f") + "\n\n")
+    else:
+        hist_info = run_eval(env_fn, agent.actor, args.num_eval, args.max_steps, render_callback=render_callback,
+                             reduce_info=False)
+        traj_lens = hist_info["traj_lens"]
+        traj_rews = hist_info["traj_rews"]
+        fig, (len_ax, rew_ax) = plt.subplots(2)
+        fig.suptitle(f"Evaluation Metrics: {config['agent']['model_name']}\nSeed={args.seed}")
+        len_ax.set_title("Episode Lengths")
+        len_ax.set(xlabel="Game Length", ylabel="% Games")
+        len_ax.hist(traj_lens, bins=20, density=True)
+        rew_ax.set_title("Total Rewards")
+        rew_ax.set(xlabel="Total Reward", ylabel="% Games")
+        rew_ax.hist(traj_rews, bins=20, density=True)
+        fig.tight_layout()
+        plt.show()
+
+        save_path = os.path.join(args.model_dir, "eval.png")
+        fig.savefig(save_path)
+
     if cleanup_callback is not None:
         cleanup_callback()
 
