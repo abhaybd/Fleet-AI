@@ -4,8 +4,9 @@ from time import sleep
 
 import torch
 import yaml
+import numpy as np
 
-from util import pretty_dict, run_evaluation
+from util import pretty_dict
 from battleship_util import create_agent_from_args, create_env_fn, run_eval
 
 
@@ -15,6 +16,7 @@ def parse_args():
     parser.add_argument("-n", "--num_eval", type=int, default=4)
     parser.add_argument("-ms", "--max_steps", type=int, default=500)
     parser.add_argument("-ts", "--timestep", type=int, default=1000, help="Timestep, in ms")
+    parser.add_argument("-s", "--seed", type=int, default=0, help="Random seed")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-r", "--render", action="store_true",
@@ -32,6 +34,9 @@ def parse_args():
 
 def main():
     args, config = parse_args()
+
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
 
     env_fn = create_env_fn(config)
     env = env_fn()
