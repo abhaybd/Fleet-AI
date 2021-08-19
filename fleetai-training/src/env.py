@@ -11,6 +11,7 @@ class BattleshipEnv(gym.Env):
         self.shots = np.zeros_like(self.board, dtype=bool)
         self.observation_space_type = observation_space
         self.action_space_type = action_space
+        self.window = None
 
         if action_space == "coords":
             self.action_space = gym.spaces.MultiDiscrete((size, size))
@@ -34,11 +35,11 @@ class BattleshipEnv(gym.Env):
         obs = np.hstack((misses.flatten(), hits.flatten()))
         if "ships" in self.observation_space_type:
             ship_obs = np.empty((len(self.ship_lens),), dtype=np.int8)
+            ship_hits = self.board[board & self.shots]
             for i, ship in enumerate(self.ship_lens):
-                ship_hits = self.board[board & self.shots]
                 sunk = (ship_hits == ship).sum() == ship
                 ship_obs[i] = sunk
-            obs = np.hstack((obs,ship_obs))
+            obs = np.hstack((obs, ship_obs))
         return obs
 
     def _done(self):
@@ -70,7 +71,43 @@ class BattleshipEnv(gym.Env):
             raise AssertionError
         return not self.shots[row, col]
 
-    def render(self, mode='human'):
+    def _render_graphics(self, width, height):
+        from graphics import GraphWin, Rectangle, Point, Circle, Text
+        if self.window is None:
+            self.window = GraphWin(width=width, height=height, autoflush=False)
+            self.window.setCoords(0, 0, width, height)
+        sq_height = min(width, height) // self.board.shape[0]
+        sq_width = min(width, height) // self.board.shape[1]
+        if width <= height:
+            x_start = 0
+            y_start = (height - width) // 2
+        else:
+            x_start = (width - height) // 2
+            y_start = 0
+        for item in self.window.items[:]:
+            item.undraw()
+        for row in reversed(range(self.board.shape[0])):
+            for col in range(self.board.shape[1]):
+                p1 = Point(x_start + col * sq_width, y_start + row * sq_height)
+                p2 = Point(x_start + (col + 1) * sq_width, y_start + (row + 1) * sq_height)
+                rect = Rectangle(p1, p2)
+                rect.setFill("blue")
+                rect.setOutline("black")
+                rect.draw(self.window)
+                if self.board[row, col]:
+                    label = Text(Point(x_start + col * sq_width + 10, y_start + row * sq_height + 10),
+                                 str(self.board[row, col]))
+                    label.setFill("black")
+                    label.draw(self.window)
+                if self.shots[row, col]:
+                    fill = "red" if self.board[row, col] else "gray"
+                    center = Point(x_start + col * sq_width + sq_width//2, y_start + row * sq_height + sq_height//2)
+                    circle = Circle(center, min(sq_height, sq_height) // 8)
+                    circle.setFill(fill)
+                    circle.draw(self.window)
+        self.window.flush()
+
+    def render(self, mode="human", width=720, height=480):
         if mode == "ansi":
             rendered = "\u250E" + ("\u2500" * self.board.shape[1]) + "\u2512\n"
             for shot_row, board_row in zip(self.shots, self.board):
@@ -81,6 +118,8 @@ class BattleshipEnv(gym.Env):
                 rendered += "\n"
             rendered += "\u2516" + ("\u2500" * self.board.shape[1]) + "\u251A"
             return rendered
+        elif mode == "human":
+            self._render_graphics(width, height)
         else:
             raise NotImplementedError
 
@@ -113,6 +152,11 @@ class BattleshipEnv(gym.Env):
                         r += dr
                         c += dc
         return self._observe()
+
+    def close(self):
+        if self.window is not None:
+            self.window.close()
+        self.window = None
 
 if __name__ == "__main__":
     be = BattleshipEnv("flat-ships")
