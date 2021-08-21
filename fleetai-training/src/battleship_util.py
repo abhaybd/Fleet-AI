@@ -22,8 +22,12 @@ def run_eval(env_fn, actor: BattleshipActor, n_ep, max_steps, render_callback=No
 
 
 def create_env_fn(args):
+    sizes = args["env"]["ship_sizes"] if "ship_sizes" in args["env"] else (1,2,3,4,5)
+    board_width = args["env"]["board_width"] if "board_width" in args["env"] else 10
+    board_height = args["env"]["board_height"] if "board_height" in args["env"] else 10
     return lambda: BattleshipEnv(observation_space=args["env"]["state_space"],
-                                 action_space=args["env"]["action_space"])
+                                 action_space=args["env"]["action_space"],
+                                 ships=sizes, board_height=board_height, board_width=board_width)
 
 
 def create_agent_from_args(device, args, env):
