@@ -17,6 +17,14 @@ export function inRange(val: number, bound1: number, bound2: number) {
     return lo <= val && val <= hi;
 }
 
+export function canPlace(ships: Ship[], ship: Ship) {
+    const inBoard = ship.coords().every(
+        coord => inRange(coord.row, 0, BOARD_SIZE-1) &&
+            inRange(coord.col, 0, BOARD_SIZE-1));
+    const collides = ships.some(s => s.collides(ship));
+    return inBoard && !collides;
+}
+
 export class Ship {
     coord: Coord;
     size: number;

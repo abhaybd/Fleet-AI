@@ -1,5 +1,5 @@
 import React from "react";
-import {BOARD_SIZE, Coord, Direction, inRange, Ship, SHIP_LENS} from "./util";
+import {BOARD_SIZE, canPlace, Coord, Direction, inRange, Ship, SHIP_LENS} from "./util";
 import "./BoardSetup.css";
 import Board from "./Board";
 
@@ -84,14 +84,6 @@ export default class BoardSetup extends React.Component<BoardSetupProps, BoardSe
         this.setToPlace = this.setToPlace.bind(this);
     }
 
-    canPlace(state: BoardSetupState, ship: Ship) {
-        const inBoard = ship.coords().every(
-            coord => inRange(coord.row, 0, BOARD_SIZE-1) &&
-                inRange(coord.col, 0, BOARD_SIZE-1));
-        const collides = state.ships.some(s => s?.collides(ship));
-        return inBoard && !collides;
-    }
-
     tileClicked(coord: Coord, rightClick: boolean) {
         if (rightClick) {
             this.setState(s => {
@@ -115,7 +107,7 @@ export default class BoardSetup extends React.Component<BoardSetupProps, BoardSe
                     else throw Error();
 
                     const ship = new Ship(size, coord.row, coord.col, dr, dc);
-                    if (this.canPlace(s, ship)) {
+                    if (canPlace(s.ships.filter(s => !!s) as Ship[], ship)) {
                         const ships = [...s.ships];
                         ships[s.toPlace] = ship;
                         return {ships: ships, toPlace: -1};
