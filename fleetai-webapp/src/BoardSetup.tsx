@@ -1,7 +1,69 @@
 import React from "react";
-import {BOARD_SIZE, Coord, Direction, opposite, Ship, SHIP_LENS} from "./util";
-import GameTile from "./GameTile";
+import {BOARD_SIZE, Coord, Direction, inRange, Ship, SHIP_LENS} from "./util";
 import "./Game.css";
+import "./BoardSetup.css";
+import Board from "./Board";
+
+interface ShipSelectorProps {
+    toPlace: number;
+    setToPlace: (idx: number) => void;
+    shipDir: Direction;
+    setShipDir: (dir: Direction) => void;
+    placed: boolean[];
+    clear: () => void;
+}
+
+function ShipSelector(props: ShipSelectorProps) {
+    let instructions;
+    if (props.toPlace !== -1) {
+        instructions = (
+            <>
+                <p>
+                    Adjust the direction of the ship and click on the board to place.
+                </p>
+                <p>Right click to delete a ship</p>
+            </>
+        )
+    } else {
+        instructions = (
+            <>
+                <p>Select a ship to place</p>
+                <p>Right click to delete a ship</p>
+            </>
+        )
+    }
+
+    function buttonText(idx: number) {
+        if (props.placed[idx]) return "Placed!"
+        else if (props.toPlace === idx) return "Currently placing...";
+        else return "Click to place"
+    }
+    return (
+        <div id="ship-selector">
+            <div id="ship-selector-ships">
+                {SHIP_LENS.map((len, i) => (
+                    <div key={i} className="ship-selector-ship">
+                        <div>Ship Length: {len}</div>
+                        <div>
+                            <button onClick={() => props.setToPlace(props.toPlace === i ? -1 : i)}>
+                                {buttonText(i)}
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div>
+                <button onClick={props.clear}>Clear all</button>
+                <select value={props.shipDir} onChange={e => props.setShipDir(e.target.value as Direction)}>
+                    {["N", "S", "E", "W"].map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+            </div>
+            <div id="ship-selector-instructions">
+                {instructions}
+            </div>
+        </div>
+    )
+}
 
 interface BoardSetupProps {
     setHumanBoard: (ships: Ship[]) => void;
@@ -10,73 +72,92 @@ interface BoardSetupProps {
 interface BoardSetupState {
     ships: (Ship | null)[];
     toPlace: number;
+    shipDir: Direction;
 }
 
 export default class BoardSetup extends React.Component<BoardSetupProps, BoardSetupState> {
     constructor(props: BoardSetupProps) {
         super(props);
-        this.state = {ships: SHIP_LENS.map(() => null), toPlace: 0};
+        this.state = {ships: SHIP_LENS.map(() => null), toPlace: -1, shipDir: Direction.East};
 
         this.tileClicked = this.tileClicked.bind(this);
+        this.clear = this.clear.bind(this);
+        this.setToPlace = this.setToPlace.bind(this);
     }
 
-    tileClicked(coord: Coord) {
-        if (this.state.toPlace < SHIP_LENS.length) {
-            this.setState(s => {
-                const size = SHIP_LENS[s.toPlace];
-                const ship = new Ship(size, coord.row, coord.col, 0, 1);
-                const ships = [...s.ships];
-                ships[s.toPlace] = ship;
-                return {ships: ships, toPlace: s.toPlace+1};
-            })
-        }
+    canPlace(state: BoardSetupState, ship: Ship) {
+        const inBoard = ship.coords().every(
+            coord => inRange(coord.row, 0, BOARD_SIZE-1) &&
+                inRange(coord.col, 0, BOARD_SIZE-1));
+        const collides = state.ships.some(s => s?.collides(ship));
+        return inBoard && !collides;
+    }
 
+    tileClicked(coord: Coord, rightClick: boolean) {
+        if (rightClick) {
+            this.setState(s => {
+                const ships = [...s.ships];
+                ships.forEach((ship, i) => {
+                    if (ship?.collides(coord)) {
+                        ships[i] = null;
+                    }
+                })
+                return {ships: ships};
+            });
+        } else {
+            if (this.state.toPlace !== -1) {
+                this.setState(s => {
+                    const size = SHIP_LENS[s.toPlace];
+                    let dr, dc;
+                    if (this.state.shipDir === Direction.East) [dr, dc] = [0, 1];
+                    else if (this.state.shipDir === Direction.West) [dr, dc] = [0, -1];
+                    else if (this.state.shipDir === Direction.North) [dr, dc] = [-1, 0];
+                    else if (this.state.shipDir === Direction.South) [dr, dc] = [1, 0];
+                    else throw Error();
+
+                    const ship = new Ship(size, coord.row, coord.col, dr, dc);
+                    if (this.canPlace(s, ship)) {
+                        const ships = [...s.ships];
+                        ships[s.toPlace] = ship;
+                        return {ships: ships, toPlace: -1};
+                    } else {
+                        return null;
+                    }
+                });
+            }
+        }
+    }
+
+    clear() {
+        this.setState({ships: SHIP_LENS.map(() => null), toPlace: -1});
+    }
+
+    setToPlace(idx: number) {
+        this.setState(state => {
+            if (idx !== -1) {
+                const ships = [...state.ships];
+                ships[idx] = null;
+                return {ships: ships, toPlace: idx};
+            } else {
+                return {toPlace: idx, ships: state.ships};
+            }
+        });
     }
 
     render() {
-        let board = [];
-        for (let r = 0; r < BOARD_SIZE; r++) {
-            let row = [];
-            for (let c = 0; c < BOARD_SIZE; c++) {
-                const coord = new Coord(r, c);
-                row.push(
-                    <GameTile key={r * BOARD_SIZE + c} coord={coord} clicked={this.tileClicked} isOccupied={false} isEdge={false}
-                              direction={Direction.East}/>
-                );
-            }
-            board.push(row);
-        }
-
-        for (const ship of this.state.ships) {
-            if (ship) {
-                let dir;
-                if (ship.dc < 0) dir = Direction.West;
-                else if (ship.dc > 0) dir = Direction.East;
-                else if (ship.dr < 0) dir = Direction.North;
-                else if (ship.dr > 0) dir = Direction.South;
-                else throw new Error();
-
-                board[ship.coord.row][ship.coord.col] =
-                    <GameTile coord={ship.coord} clicked={this.tileClicked} isOccupied={true}
-                              isEdge={true} direction={dir}/>;
-                for (let i = 0; i < ship.size; i++) {
-                    const row = ship.coord.row + i * ship.dr;
-                    const col = ship.coord.col + i * ship.dc;
-                    const isEdge = i === 0 || i === ship.size - 1;
-                    const d = i !== ship.size - 1 ? dir : opposite(dir);
-                    board[row][col] = <GameTile coord={new Coord(row, col)} clicked={this.tileClicked} isOccupied={true}
-                                  isEdge={isEdge} direction={d} key={row * BOARD_SIZE + col}/>;
-                }
-            }
-        }
         return (
             <div id="board-setup">
-                {board.map((row, r) => (
-                    <div className="game-row" key={r}>
-                        {row}
-                    </div>
-                ))}
+                <ShipSelector toPlace={this.state.toPlace} setToPlace={this.setToPlace}
+                    shipDir={this.state.shipDir} setShipDir={dir => this.setState({shipDir: dir})}
+                    placed={this.state.ships.map(s => !!s)} clear={this.clear}/>
+                <Board ships={this.state.ships} shots={[]} tileClicked={this.tileClicked}/>
+                <div>
+                    <button onClick={() => this.props.setHumanBoard(this.state.ships as Ship[])}
+                        disabled={this.state.ships.some(s => !s) ? true: undefined}>
+                        Start game
+                    </button>
+                </div>
             </div>
-        );
+        )
     }
 }

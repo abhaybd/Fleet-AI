@@ -4,13 +4,27 @@ import {Coord, Direction} from "./util";
 
 interface GameTileProps {
     coord: Coord;
-    clicked: (coord: Coord) => void;
+    clicked: (coord: Coord, rightClicked: boolean) => void;
     isOccupied: boolean;
     isEdge: boolean;
     direction: Direction;
 }
 
 export default class GameTile extends React.Component<GameTileProps, {}> {
+    constructor(props: GameTileProps) {
+        super(props);
+        this.clicked = this.clicked.bind(this);
+    }
+
+    clicked(e: React.MouseEvent<HTMLDivElement>) {
+        e.preventDefault();
+        if (e.button === 0) {
+            this.props.clicked(this.props.coord, false);
+        } else if (e.button === 2) {
+            this.props.clicked(this.props.coord, true);
+        }
+    }
+
     render() {
         let fill = null;
         if (this.props.isOccupied) {
@@ -21,7 +35,7 @@ export default class GameTile extends React.Component<GameTileProps, {}> {
             }
         }
         return (
-            <div className="game-tile" onClick={() => this.props.clicked(this.props.coord)}>
+            <div className="game-tile" onClick={this.clicked} onContextMenu={this.clicked}>
                 {fill}
             </div>
         );

@@ -11,6 +11,12 @@ export class Coord {
     }
 }
 
+export function inRange(val: number, bound1: number, bound2: number) {
+    const lo = Math.min(bound1, bound2);
+    const hi = Math.max(bound1, bound2);
+    return lo <= val && val <= hi;
+}
+
 export class Ship {
     coord: Coord;
     size: number;
@@ -24,21 +30,30 @@ export class Ship {
         this.dc = dc;
 
         this.collides = this.collides.bind(this);
+        this.coords = this.coords.bind(this);
     }
 
-    inRange(val: number, bound1: number, bound2: number) {
-        const lo = Math.min(bound1, bound2);
-        const hi = Math.max(bound1, bound2);
-        return lo <= val && val <= hi;
+    coords() {
+        let ret: Coord[] = [];
+        let {row, col} = this.coord;
+        for (let i = 0; i < this.size; i++) {
+            ret.push(new Coord(row + i * this.dr, col + i * this.dc));
+        }
+        return ret;
     }
 
-    collides(coord: Coord) {
-        const {row, col} = coord;
-        const rowStart = this.coord.row;
-        const rowEnd = rowStart + this.dr * (this.size - 1);
-        const colStart = this.coord.col;
-        const colEnd = colStart + this.dc * (this.size - 1);
-        return this.inRange(row, rowStart, rowEnd) && this.inRange(col, colStart, colEnd);
+    collides(coordOrShip: (Coord | Ship)): boolean {
+        if (coordOrShip instanceof Coord) {
+            const {row, col} = coordOrShip as Coord;
+            const rowStart = this.coord.row;
+            const rowEnd = rowStart + this.dr * (this.size - 1);
+            const colStart = this.coord.col;
+            const colEnd = colStart + this.dc * (this.size - 1);
+            return inRange(row, rowStart, rowEnd) && inRange(col, colStart, colEnd);
+        } else {
+            let coords = coordOrShip.coords();
+            return coords.some(this.collides);
+        }
     }
 }
 

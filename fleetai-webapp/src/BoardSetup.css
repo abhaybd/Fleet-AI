@@ -1,0 +1,32 @@
+#board-setup {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#ship-selector {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#ship-selector-ships {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+  font-size: 15pt;
+}
+
+.ship-selector-ship {
+  margin: 5px;
+  padding: 2px;
+  border: 1px solid white;
+}
+
+#ship-selector-instructions {
+  font-size: 20pt;
+}
+
+#ship-selector-instructions p {
+  margin: 0;
+}
