@@ -20,18 +20,19 @@ interface GameState {
 export default class Game extends React.Component<GameProps, GameState> {
     constructor(props: Readonly<GameProps> | GameProps) {
         super(props);
-        this.state = {humanTurn: false, humanWon: null};
+        this.state = {humanTurn: Math.random() >= 0.5, humanWon: null};
         this.tileClicked = this.tileClicked.bind(this);
         this.doBotMove = this.doBotMove.bind(this);
     }
 
     componentDidMount() {
         if (!this.state.humanTurn) {
-            setTimeout(this.doBotMove, 1000);
+            this.doBotMove();
         }
     }
 
     async getBotMove(): Promise<Coord> {
+        // TODO: replace with actual bot logic
         return new Promise<Coord>(resolve => {
             setTimeout(() => {
                 let n = this.props.botShots.length;
