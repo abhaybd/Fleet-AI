@@ -71,8 +71,8 @@ export default class BoardSetup extends React.Component<BoardSetupProps, BoardSe
         }
         return (
             <div id="board-setup">
-                {board.map(row => (
-                    <div className="game-row">
+                {board.map((row, r) => (
+                    <div className="game-row" key={r}>
                         {row}
                     </div>
                 ))}
