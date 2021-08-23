@@ -15,11 +15,25 @@ export default class GameContainer extends React.Component<{}, GameContainerStat
         super(props)
         this.state = {humanShots: [], humanShips: null, botShips: null, botShots: []};
         this.startGame = this.startGame.bind(this);
+        this.addBotShot = this.addBotShot.bind(this);
+        this.addHumanShot = this.addHumanShot.bind(this);
     }
 
     startGame(ships: Ship[]) {
         // TODO: init opponent board (not as the same as human, obv)
         this.setState({humanShips: ships, botShips: ships});
+    }
+
+    async addBotShot(coord: Coord) {
+        return new Promise<void>(resolve => {
+            this.setState(state => ({botShots: state.botShots.concat(coord)}), resolve);
+        })
+    }
+
+    async addHumanShot(coord: Coord) {
+        return new Promise<void>(resolve => {
+            this.setState(state => ({humanShots: state.humanShots.concat(coord)}), resolve);
+        })
     }
 
     render() {
@@ -28,7 +42,8 @@ export default class GameContainer extends React.Component<{}, GameContainerStat
             content = <BoardSetup setHumanBoard={this.startGame}/>;
         } else {
             content = <Game humanShips={this.state.humanShips} botShips={this.state.botShips as Ship[]}
-                            humanShots={this.state.humanShots} botShots={this.state.botShots}/>;
+                            humanShots={this.state.humanShots} botShots={this.state.botShots}
+                            addBotShot={this.addBotShot} addHumanShot={this.addHumanShot}/>;
         }
         return (
             <>

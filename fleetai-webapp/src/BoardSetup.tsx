@@ -149,7 +149,7 @@ export default class BoardSetup extends React.Component<BoardSetupProps, BoardSe
                 <ShipSelector toPlace={this.state.toPlace} setToPlace={this.setToPlace}
                     shipDir={this.state.shipDir} setShipDir={dir => this.setState({shipDir: dir})}
                     placed={this.state.ships.map(s => !!s)} clear={this.clear}/>
-                <Board ships={this.state.ships} shots={[]} tileClicked={this.tileClicked}/>
+                <Board ships={this.state.ships} shots={[]} tileClicked={this.tileClicked} hideShips={false}/>
                 <div>
                     <button onClick={() => this.props.setHumanBoard(this.state.ships as Ship[])}
                         disabled={this.state.ships.some(s => !s) ? true: undefined}>
