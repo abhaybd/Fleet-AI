@@ -1,6 +1,7 @@
 import React from "react";
 import {BOARD_SIZE, Coord, Direction, opposite, Ship} from "./util";
 import GameTile from "./GameTile";
+import "./Board.css";
 
 interface BoardProps {
     ships: (Ship | null)[];
@@ -16,7 +17,7 @@ export default function Board(props: BoardProps) {
             const coord = new Coord(r, c);
             row.push(
                 <GameTile key={r * BOARD_SIZE + c} coord={coord} clicked={props.tileClicked} isOccupied={false} isEdge={false}
-                          direction={Direction.East}/>
+                          direction={Direction.East} hitIndicator={undefined}/>
             );
         }
         board.push(row);
@@ -33,21 +34,21 @@ export default function Board(props: BoardProps) {
 
             board[ship.coord.row][ship.coord.col] =
                 <GameTile coord={ship.coord} clicked={props.tileClicked} isOccupied={true}
-                          isEdge={true} direction={dir}/>;
+                          isEdge={true} direction={dir} hitIndicator={undefined}/>;
             for (let i = 0; i < ship.size; i++) {
                 const row = ship.coord.row + i * ship.dr;
                 const col = ship.coord.col + i * ship.dc;
                 const isEdge = i === 0 || i === ship.size - 1;
                 const d = i !== ship.size - 1 ? dir : opposite(dir);
                 board[row][col] = <GameTile coord={new Coord(row, col)} clicked={props.tileClicked} isOccupied={true}
-                                            isEdge={isEdge} direction={d} key={row * BOARD_SIZE + col}/>;
+                                            isEdge={isEdge} direction={d} key={row * BOARD_SIZE + col} hitIndicator={undefined}/>;
             }
         }
     }
     return (
         <div id="board">
             {board.map((row, r) => (
-                <div className="game-row" key={r}>
+                <div className="board-row" key={r}>
                     {row}
                 </div>
             ))}

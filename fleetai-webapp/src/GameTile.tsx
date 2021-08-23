@@ -8,6 +8,7 @@ interface GameTileProps {
     isOccupied: boolean;
     isEdge: boolean;
     direction: Direction;
+    hitIndicator: "hit" | "miss" | undefined;
 }
 
 export default class GameTile extends React.Component<GameTileProps, {}> {
@@ -26,16 +27,18 @@ export default class GameTile extends React.Component<GameTileProps, {}> {
     }
 
     render() {
-        let fill = null;
+        let classNames = [];
         if (this.props.isOccupied) {
+            classNames.push("ship-tile");
             if (this.props.isEdge) {
-                fill = <div className={`ship-tile ship-tile-${this.props.direction}`}/>
-            } else {
-                fill = <div className="ship-tile"/>
+                classNames.push(`ship-tile-${this.props.direction}`);
             }
         }
+        let fill = classNames.length ? <div className={classNames.join(" ")} /> : null;
+        let hitIndicator = this.props.hitIndicator ? <div className={`shot ${this.props.hitIndicator}`}/> : null;
         return (
             <div className="game-tile" onClick={this.clicked} onContextMenu={this.clicked}>
+                {hitIndicator}
                 {fill}
             </div>
         );

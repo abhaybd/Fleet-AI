@@ -1,12 +1,12 @@
 import React from 'react';
 import './App.css';
-import BoardSetup from "./BoardSetup";
+import GameContainer from "./GameContainer";
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <BoardSetup setHumanBoard={() => null}/>
+        <GameContainer/>
       </header>
     </div>
   );

@@ -1,6 +1,10 @@
-#boards {
-  width: 80vw;
+.board-row {
   display: flex;
   flex-direction: row;
+  padding: 0;
   justify-content: center;
+}
+
+#board {
+  margin: 25px 50px;
 }

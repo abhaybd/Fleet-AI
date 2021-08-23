@@ -1,6 +1,5 @@
 import React from "react";
 import {BOARD_SIZE, Coord, Direction, inRange, Ship, SHIP_LENS} from "./util";
-import "./Game.css";
 import "./BoardSetup.css";
 import Board from "./Board";
 

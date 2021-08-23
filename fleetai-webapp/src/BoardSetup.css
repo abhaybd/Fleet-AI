@@ -20,7 +20,7 @@
 .ship-selector-ship {
   margin: 5px;
   padding: 2px;
-  border: 1px solid white;
+  border: 1px solid gray;
 }
 
 #ship-selector-instructions {
