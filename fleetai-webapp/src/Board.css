@@ -3,8 +3,14 @@
   flex-direction: row;
   padding: 0;
   justify-content: center;
+  height: 10%;
+  width: 100%;
 }
 
 #board {
+  width: 500px;
+  height: 500px;
+  max-width: min(80vw, 80vh);
+  max-height: min(80vw, 80vh);
   margin: 25px 50px;
 }

@@ -1,6 +1,6 @@
 .game-tile {
-  width: 50px;
-  height: 50px;
+  width: 10%;
+  height: 100%;
   overflow: hidden;
   border: 1px solid gray;
   position: relative;

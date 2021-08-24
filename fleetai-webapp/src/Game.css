@@ -1,6 +1,7 @@
 #boards {
-  width: 80vw;
+  max-width: 80vw;
   display: flex;
   flex-direction: row;
   justify-content: center;
+  flex-wrap: wrap;
 }
