@@ -1,4 +1,5 @@
-import React from "react"
+import React from "react";
+import ReactGA from "react-ga";
 import {Coord, randomShips, Ship} from "./util";
 import BoardSetup from "./BoardSetup";
 import Game from "./Game";
@@ -20,11 +21,33 @@ export default class GameContainer extends React.Component<{}, GameContainerStat
         this.reset = this.reset.bind(this);
     }
 
+    componentDidMount() {
+        ReactGA.initialize("UA-174949204-3", {
+            titleCase: true,
+            gaOptions: {
+                siteSpeedSampleRate: 100
+            }
+        });
+        ReactGA.pageview("/");
+        ReactGA.event({
+            category: "Game",
+            action: "New Game"
+        });
+    }
+
     startGame(ships: Ship[]) {
+        ReactGA.event({
+            category: "Game",
+            action: "Start Game"
+        });
         this.setState({humanShips: ships, botShips: randomShips()});
     }
 
     reset() {
+        ReactGA.event({
+            category: "Game",
+            action: "Reset Game"
+        });
         this.setState({humanShots: [], humanShips: null, botShips: null, botShots: []});
     }
 
