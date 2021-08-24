@@ -1,5 +1,7 @@
 # Fleet-AI
 
+Available at https://fleet-ai.web.app/
+
 Fleet-AI is a Battleship AI powered by deep reinforcement learning. There are two parts, `fleetai-training`, which trains the neural network, and `fleetai-webapp`, a webapp written in React.js where users can play against the AI.
 
 ## Training
