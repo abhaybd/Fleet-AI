@@ -1,5 +1,6 @@
 import torch
 from torch.distributions import Categorical
+from torch.distributions.utils import logits_to_probs
 
 from actor_critic import ActorBase, create_network
 
@@ -10,6 +11,13 @@ class BattleshipActor(ActorBase):
         self.device = device
         self.state_dim = state_dim
         self.logits_net = create_network((state_dim,) + layers + (action_dim,)).to(device)
+
+    # required for torchscript tracing
+    def forward(self, state, probs=False):
+        if probs:
+            return self.probs(state)
+        else:
+            return self._distribution(state)
 
     def _distribution(self, state):
         output = self.logits_net(state)
@@ -26,4 +34,6 @@ class BattleshipActor(ActorBase):
         if not isinstance(state, torch.Tensor):
             state = torch.tensor(state, device=self.device, dtype=torch.float32)
         state = state.reshape(-1, self.state_dim)
-        return self._distribution(state).probs
+        logits = self.logits_net(state).squeeze()
+        probs = logits_to_probs(logits)
+        return probs

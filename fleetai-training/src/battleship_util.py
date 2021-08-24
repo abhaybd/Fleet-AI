@@ -1,3 +1,5 @@
+import os
+
 from ppo import PPO
 
 from actor_critic import MultiDiscActor, Critic
@@ -54,3 +56,15 @@ def create_agent_from_args(device, args, env):
               entropy_coeff=args_ppo["entropy_coeff"],
               target_kl=args_ppo["target_kl"])
     return ppo
+
+def load_agent_from_args(device, model_dir, args):
+    env_fn = create_env_fn(args)
+    env = env_fn()
+    agent = create_agent_from_args(device, args, env)
+
+    model_path = os.path.join(model_dir, f"{args['agent']['algo']}.pt")
+    if os.path.isfile(model_path):
+        agent.load(model_path)
+    else:
+        raise Exception(f"{model_path} does not exist!")
+    return agent

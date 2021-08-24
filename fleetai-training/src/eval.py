@@ -48,7 +48,7 @@ def main():
     if os.path.isfile(model_path):
         agent.load(model_path)
     else:
-        raise Exception(f"{args.model_path} does not exist!")
+        raise Exception(f"{model_path} does not exist!")
 
     render_callback = None
     cleanup_callback = None
