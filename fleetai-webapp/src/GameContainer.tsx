@@ -1,5 +1,5 @@
 import React from "react"
-import {BOARD_SIZE, canPlace, Coord, Ship, SHIP_LENS} from "./util";
+import {Coord, randomShips, Ship} from "./util";
 import BoardSetup from "./BoardSetup";
 import Game from "./Game";
 
@@ -8,25 +8,6 @@ interface GameContainerState {
     botShips: Ship[] | null;
     humanShots: Coord[]; // shots taken by human
     botShots: Coord[]; // shots taken by bot
-}
-
-function randomShips() {
-    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
-    let ships: Ship[] = [];
-    for (const shipLen of SHIP_LENS.reverse()) {
-        let placed = false;
-        while (!placed) {
-            let row = Math.floor(Math.random() * BOARD_SIZE);
-            let col = Math.floor(Math.random() * BOARD_SIZE);
-            let [dr, dc] = dirs[Math.floor(Math.random() * dirs.length)];
-            let ship = new Ship(shipLen, row, col, dr, dc);
-            if (canPlace(ships, ship)) {
-                placed = true;
-                ships.push(ship);
-            }
-        }
-    }
-    return ships;
 }
 
 export default class GameContainer extends React.Component<{}, GameContainerState>{

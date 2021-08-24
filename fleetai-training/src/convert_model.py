@@ -24,11 +24,13 @@ def main():
 
     env = create_env_fn(config)()
     agent = load_agent_from_args(torch.device("cpu"), args.model_dir, config)
+    agent.actor.forward_probs = True
 
     state = torch.tensor(env.observation_space.sample(), dtype=torch.float32)
-    traced_actor = torch.jit.trace(agent.actor, (state,torch.tensor(True)))
-    print(traced_actor.code)
-    traced_actor.save(args.output_path)
+    model_args = (state,)
+    agent.actor.eval()
+    torch.onnx.export(agent.actor, model_args, args.output_path, export_params=True, opset_version=7, verbose=True)
+    print("Done!")
 
 if __name__ == "__main__":
     main()

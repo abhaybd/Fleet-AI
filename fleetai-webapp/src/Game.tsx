@@ -1,7 +1,8 @@
 import React from "react";
-import {BOARD_SIZE, Coord, Ship, SHIP_LENS} from "./util";
+import {Coord, Ship, SHIP_LENS} from "./util";
 import Board from "./Board";
 import "./Game.css";
+import BattleshipActor from "./BattleshipActor";
 
 interface GameProps {
     humanShips: Ship[];
@@ -18,6 +19,7 @@ interface GameState {
 }
 
 export default class Game extends React.Component<GameProps, GameState> {
+    private actor: BattleshipActor | undefined;
     constructor(props: Readonly<GameProps> | GameProps) {
         super(props);
         this.state = {humanTurn: Math.random() >= 0.5, humanWon: null};
@@ -26,19 +28,15 @@ export default class Game extends React.Component<GameProps, GameState> {
     }
 
     componentDidMount() {
+        this.actor = new BattleshipActor();
         if (!this.state.humanTurn) {
             this.doBotMove();
         }
     }
 
     async getBotMove(): Promise<Coord> {
-        // TODO: replace with actual bot logic
-        return new Promise<Coord>(resolve => {
-            setTimeout(() => {
-                let n = this.props.botShots.length;
-                resolve(new Coord(Math.floor(n/BOARD_SIZE),n % BOARD_SIZE));
-            }, 1000);
-        })
+        let actor = this.actor as BattleshipActor;
+        return await actor.getAction(this.props.humanShips, this.props.botShots);
     }
 
     doBotMove() {
@@ -52,7 +50,7 @@ export default class Game extends React.Component<GameProps, GameState> {
             let ships = prevState.humanTurn ? this.props.botShips : this.props.humanShips;
             let numHits = shots.filter(coord => ships.some(s => s.collides(coord))).length;
             if (numHits === SHIP_LENS.reduce((a,b) => a+b)) {
-                this.setState({humanWon: true});
+                this.setState({humanWon: prevState.humanTurn});
             } else if (!this.state.humanTurn) {
                 this.doBotMove();
             }

@@ -11,10 +11,10 @@ class BattleshipActor(ActorBase):
         self.device = device
         self.state_dim = state_dim
         self.logits_net = create_network((state_dim,) + layers + (action_dim,)).to(device)
+        self.forward_probs = False # required for torchscript tracing
 
-    # required for torchscript tracing
-    def forward(self, state, probs=False):
-        if probs:
+    def forward(self, state):
+        if self.forward_probs:
             return self.probs(state)
         else:
             return self._distribution(state)
@@ -33,7 +33,6 @@ class BattleshipActor(ActorBase):
     def probs(self, state):
         if not isinstance(state, torch.Tensor):
             state = torch.tensor(state, device=self.device, dtype=torch.float32)
-        state = state.reshape(-1, self.state_dim)
-        logits = self.logits_net(state).squeeze()
+        logits = self.logits_net(state)
         probs = logits_to_probs(logits)
         return probs

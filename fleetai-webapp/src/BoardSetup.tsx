@@ -1,5 +1,5 @@
 import React from "react";
-import {BOARD_SIZE, canPlace, Coord, Direction, inRange, Ship, SHIP_LENS} from "./util";
+import {canPlace, Coord, Direction, randomShips, Ship, SHIP_LENS} from "./util";
 import "./BoardSetup.css";
 import Board from "./Board";
 
@@ -10,6 +10,7 @@ interface ShipSelectorProps {
     setShipDir: (dir: Direction) => void;
     placed: boolean[];
     clear: () => void;
+    setShips: (ships: Ship[]) => void;
 }
 
 function ShipSelector(props: ShipSelectorProps) {
@@ -52,10 +53,13 @@ function ShipSelector(props: ShipSelectorProps) {
                 ))}
             </div>
             <div>
-                <button onClick={props.clear}>Clear all</button>
-                <select value={props.shipDir} onChange={e => props.setShipDir(e.target.value as Direction)}>
-                    {["N", "S", "E", "W"].map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                <div>
+                    <button onClick={props.clear}>Clear all</button>
+                    <select value={props.shipDir} onChange={e => props.setShipDir(e.target.value as Direction)}>
+                        {["N", "S", "E", "W"].map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                </div>
+                <button onClick={() => props.setShips(randomShips())}>Randomize</button>
             </div>
             <div id="ship-selector-instructions">
                 {instructions}
@@ -140,7 +144,8 @@ export default class BoardSetup extends React.Component<BoardSetupProps, BoardSe
             <div id="board-setup">
                 <ShipSelector toPlace={this.state.toPlace} setToPlace={this.setToPlace}
                     shipDir={this.state.shipDir} setShipDir={dir => this.setState({shipDir: dir})}
-                    placed={this.state.ships.map(s => !!s)} clear={this.clear}/>
+                    placed={this.state.ships.map(s => !!s)} clear={this.clear}
+                    setShips={ships => this.setState({ships: ships})}/>
                 <Board ships={this.state.ships} shots={[]} tileClicked={this.tileClicked} hideShips={false}/>
                 <div>
                     <button onClick={() => this.props.setHumanBoard(this.state.ships as Ship[])}

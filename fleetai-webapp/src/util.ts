@@ -25,6 +25,25 @@ export function canPlace(ships: Ship[], ship: Ship) {
     return inBoard && !collides;
 }
 
+export function randomShips() {
+    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+    let ships: Ship[] = [];
+    for (const shipLen of [...SHIP_LENS].reverse()) {
+        let placed = false;
+        while (!placed) {
+            let row = Math.floor(Math.random() * BOARD_SIZE);
+            let col = Math.floor(Math.random() * BOARD_SIZE);
+            let [dr, dc] = dirs[Math.floor(Math.random() * dirs.length)];
+            let ship = new Ship(shipLen, row, col, dr, dc);
+            if (canPlace(ships, ship)) {
+                placed = true;
+                ships.push(ship);
+            }
+        }
+    }
+    return ships.reverse();
+}
+
 export class Ship {
     coord: Coord;
     size: number;
