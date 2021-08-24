@@ -11,6 +11,7 @@ interface GameProps {
     botShots: Coord[];
     addHumanShot: (coord: Coord) => Promise<void>;
     addBotShot: (coord: Coord) => Promise<void>;
+    reset: () => void;
 }
 
 interface GameState {
@@ -78,6 +79,7 @@ export default class Game extends React.Component<GameProps, GameState> {
                     <p>
                         {info}
                     </p>
+                    {this.state.humanWon !== null ? <button onClick={() => this.props.reset()}>New game</button> : null}
                 </div>
                 <div id="boards">
                     <div id="bot-ships">

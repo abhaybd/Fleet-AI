@@ -21,6 +21,14 @@
   max-width: 90vw;
 }
 
+#dir-picker {
+  font-size: 12pt;
+}
+
+#dir-picker select {
+  margin-left: 5px;
+}
+
 .ship-selector-ship {
   margin: 5px;
   padding: 2px;

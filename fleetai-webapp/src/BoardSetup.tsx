@@ -38,6 +38,7 @@ function ShipSelector(props: ShipSelectorProps) {
         else if (props.toPlace === idx) return "Currently placing...";
         else return "Click to place"
     }
+    const dirMap = {"N": "North", "S": "South", "E": "East", "W": "West"};
     return (
         <div id="ship-selector">
             <div id="ship-selector-ships">
@@ -53,12 +54,13 @@ function ShipSelector(props: ShipSelectorProps) {
                 ))}
             </div>
             <div>
-                <div>
-                    <button onClick={props.clear}>Clear all</button>
+                <div id="dir-picker">
+                    Direction:
                     <select value={props.shipDir} onChange={e => props.setShipDir(e.target.value as Direction)}>
-                        {["N", "S", "E", "W"].map(d => <option key={d} value={d}>{d}</option>)}
+                        {["N", "S", "E", "W"].map(d => <option key={d} value={d}>{dirMap[d as Direction]}</option>)}
                     </select>
                 </div>
+                <button onClick={props.clear}>Clear all</button>
                 <button onClick={() => props.setShips(randomShips())}>Randomize</button>
             </div>
             <div id="ship-selector-instructions">
@@ -146,13 +148,13 @@ export default class BoardSetup extends React.Component<BoardSetupProps, BoardSe
                     shipDir={this.state.shipDir} setShipDir={dir => this.setState({shipDir: dir})}
                     placed={this.state.ships.map(s => !!s)} clear={this.clear}
                     setShips={ships => this.setState({ships: ships})}/>
-                <Board ships={this.state.ships} shots={[]} tileClicked={this.tileClicked} hideShips={false}/>
                 <div>
                     <button onClick={() => this.props.setHumanBoard(this.state.ships as Ship[])}
-                        disabled={this.state.ships.some(s => !s) ? true: undefined}>
+                            disabled={this.state.ships.some(s => !s) ? true: undefined}>
                         Start game
                     </button>
                 </div>
+                <Board ships={this.state.ships} shots={[]} tileClicked={this.tileClicked} hideShips={false}/>
             </div>
         )
     }
