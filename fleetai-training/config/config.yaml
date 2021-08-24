@@ -1,0 +1,37 @@
+agent:
+  algo: ppo
+  model_name: PPO_flat-ships_flat_new-ships_hi-discount
+  actor_type: disc
+  save_dir: models
+
+env:
+  max_steps: 200
+  state_space: flat-ships
+  action_space: flat
+  board_width: 10
+  board_height: 10
+  ship_sizes: [2, 3, 3, 4, 5]
+
+eval:
+  eval_interval: 5
+  num_ep: 5
+  seed: 2021
+
+training:
+  discount: 0.97
+  gpu_idx: 0
+  num_procs: 4
+  ppo:
+    actor_learning_rate: 0.0003
+    actor_steps: 80
+    clip_ratio: 0.2
+    critic_learning_rate: 0.001
+    critic_steps: 80
+    entropy_coeff: 0.001
+    gae_lam: 0.97
+    target_kl: 0.015
+  save_interval: 5
+  seed: 42
+  total_steps: 5000
+  train_samples: 4096
+  use_gpu: true

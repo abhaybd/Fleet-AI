@@ -14,16 +14,16 @@ from battleship_util import create_agent_from_args, create_env_fn, run_eval
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("model_dir", type=str, help="Path to directory containing config and model file")
-    parser.add_argument("-n", "--num_eval", type=int, default=4)
-    parser.add_argument("-ms", "--max_steps", type=int, default=500)
-    parser.add_argument("-ts", "--timestep", type=int, default=1000, help="Timestep, in ms")
+    parser.add_argument("-n", "--num_eval", type=int, default=4, help="Number of episodes to run")
+    parser.add_argument("-ms", "--max_steps", type=int, default=500, help="Max episode length")
+    parser.add_argument("-ts", "--timestep", type=int, default=1000, help="Timestep, in ms. Only relevant if -r defined.")
     parser.add_argument("-s", "--seed", type=int, default=0, help="Random seed")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-r", "--render", action="store_true",
-                       help="Render to screen (mutually exclusive with -v)")
+                       help="Render to screen (mutually exclusive with -hg)")
     group.add_argument("-hg", "--histogram", action="store_true",
-                       help="Plot histograms of data")
+                       help="Plot histograms of data (use larger values of -n)")
     args = parser.parse_args()
 
     cfg_path = os.path.join(args.model_dir, "config.yaml")
