@@ -1,3 +1,4 @@
+import sys
 import yaml
 import argparse
 import os
@@ -63,6 +64,8 @@ def main():
     if torch.cuda.is_available() and args["training"]["use_gpu"]:
         device = torch.device("cuda", args["training"]["gpu_idx"])
     else:
+        if args["training"]["use_gpu"] and not torch.cuda.is_available():
+            print("WARN: use_gpu specified but CUDA not available! Using CPU instead...", file=sys.stderr)
         device = torch.device("cpu")
 
     # create environment (optionally using subprocesses)
