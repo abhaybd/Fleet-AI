@@ -77,12 +77,19 @@ def main():
         traj_rews = hist_info["traj_rews"]
         fig, (len_ax, rew_ax) = plt.subplots(2)
         fig.suptitle(f"Evaluation Metrics: {config['agent']['model_name']}\nSeed={args.seed}")
-        len_ax.set_title("Episode Lengths")
-        len_ax.set(xlabel="Game Length", ylabel="% Games")
-        len_ax.hist(traj_lens, bins=20, density=True)
-        rew_ax.set_title("Total Rewards")
-        rew_ax.set(xlabel="Total Reward", ylabel="% Games")
-        rew_ax.hist(traj_rews, bins=20, density=True)
+        def plot_hist(ax, title, x_label, y_label, data, bins=20):
+            mean = np.mean(data)
+            ax.set_title(title)
+            ax.set(xlabel=x_label, ylabel=y_label)
+            ax.hist(data, bins=bins, density=True)
+            ax.axvline(mean, color="black", linestyle="dashed")
+            min_ylim, max_ylim = ax.get_ylim()
+            min_xlim, max_xlim = ax.get_xlim()
+            text_x = mean + (max_xlim - min_xlim) * 0.02
+            text_y = min_ylim + (max_ylim - min_ylim) * 0.1
+            ax.text(text_x, text_y, f"Avg: {mean:.1f}")
+        plot_hist(len_ax, "Episode Lengths", "Game Length", "% Games", traj_lens)
+        plot_hist(rew_ax, "Total Rewards", "Total Reward", "% Games", traj_rews)
         fig.tight_layout()
         plt.show()
 
