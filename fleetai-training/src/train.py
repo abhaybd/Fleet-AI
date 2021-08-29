@@ -83,6 +83,9 @@ def main():
         writer = SummaryWriter(comment=f"_{args['agent']['model_name']}")
         args["log_dir"] = writer.log_dir
 
+    save_interval = args["training"]["save_interval"]
+    eval_interval = args["training"]["eval_interval"]
+
     save_agent(args, agent)
     while agent.total_it < args["training"]["total_steps"]:
         sample, rollout_info = collect_trajectories_vec_env(env, args["training"]["train_samples"], device,
@@ -97,13 +100,13 @@ def main():
         print(f"{agent.total_it} - {pretty_dict({**train_info, **rollout_info})}")
 
         # launch eval
-        if args["eval"]["eval_interval"] != -1 and agent.total_it % args["eval"]["eval_interval"] == 0:
+        if eval_interval != -1 and agent.total_it % eval_interval == 0:
             eval_info = run_eval(env_fn, agent.actor, args["eval"]["num_ep"], args["env"]["max_steps"])
             for name, val in eval_info.items():
                 writer.add_scalar(f"Eval/{name}", val, agent.total_it)
             print(f"Evaluation - {pretty_dict(eval_info)}")
 
-        if agent.total_it % args["training"]["save_interval"] == 0:
+        if save_interval != -1 and agent.total_it % save_interval == 0:
             save_agent(args, agent)
     save_agent(args, agent)
     env.close()
