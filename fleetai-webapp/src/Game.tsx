@@ -75,8 +75,10 @@ export default class Game extends React.Component<GameProps, GameState> {
 
     render() {
         let info;
+        let hasWinner = false;
         if (this.state.humanWon !== null) {
             info = `${this.state.humanWon ? "You" : "Bot"} won!`;
+            hasWinner = true;
         } else {
             info = this.state.humanTurn ? "Your turn!" : "Waiting for bot...";
         }
@@ -92,7 +94,7 @@ export default class Game extends React.Component<GameProps, GameState> {
                     <div id="bot-ships">
                         <p>Bot's Ships</p>
                         <Board ships={this.props.botShips} shots={this.props.humanShots} tileClicked={this.tileClicked}
-                            hideShips={true}/>
+                            hideShips={!hasWinner}/>
                     </div>
                     <div id="human-ships">
                         <p>Your Ships</p>
