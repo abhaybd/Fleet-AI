@@ -84,7 +84,7 @@ def main():
         args["log_dir"] = writer.log_dir
 
     save_interval = args["training"]["save_interval"]
-    eval_interval = args["training"]["eval_interval"]
+    eval_interval = args["eval"]["eval_interval"]
 
     save_agent(args, agent)
     while agent.total_it < args["training"]["total_steps"]:
