@@ -1,60 +1,31 @@
 import sys
-import yaml
 import argparse
-import os
 from itertools import chain
 
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from vec_env import DummyVecEnv, SubprocVecEnv
+from .vec_env import DummyVecEnv, SubprocVecEnv
 
-from util import collect_trajectories_vec_env, pretty_dict
-from battleship_util import create_agent_from_args, create_env_fn, run_eval
+from .util import collect_trajectories_vec_env, pretty_dict
+from .battleship_util import create_agent_from_args, create_env_fn, run_eval
 
 
-def parse_args():
+def parse_args(load_config):
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=str, required=True,
                         help="Path to configuration YAML file")
     parser.add_argument("-r", "--resume", action='store_true',
                         help="Enable resume training from a saved model.")
-    args = parser.parse_args()
-    with open(args.config) as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
+    args, _ = parser.parse_known_args()
+    config = load_config(args.config)
     config["resume"] = args.resume
     return config
 
 
-def get_save_paths(args):
-    dir_name = os.path.join(args["agent"]["save_dir"], args["agent"]["model_name"])
-    return dir_name, f"{os.path.join(dir_name, args['agent']['algo'])}.pt"
-
-
-def save_agent(args, agent):
-    dir_name, agent_path = get_save_paths(args)
-    os.makedirs(dir_name, exist_ok=True)
-    args_path = os.path.join(dir_name, "config.yaml")
-    agent.save(agent_path)
-    with open(args_path, "w") as f:
-        f.write(yaml.dump(args, default_flow_style=False))
-
-
-def load_agent(args, agent):
-    _, agent_path = get_save_paths(args)
-    file_exists = os.path.isfile(agent_path)
-    resume = ("resume" in args) and args["resume"]
-    if resume and file_exists:
-        agent.load(agent_path)
-    elif file_exists and not resume:
-        raise Exception("A model exists at the save path. Use -r to resume training.")
-    elif resume and not file_exists:
-        raise Exception("Resume flag specified, but no model found.")
-
-
-def main():
-    args = parse_args()
+def train(save_agent, load_agent, load_config):
+    args = parse_args(load_config)
 
     np.random.seed(args["training"]["seed"])
     torch.manual_seed(args["training"]["seed"])
@@ -111,7 +82,3 @@ def main():
     save_agent(args, agent)
     env.close()
     print("Finished training!")
-
-
-if __name__ == "__main__":
-    main()

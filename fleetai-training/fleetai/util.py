@@ -1,9 +1,40 @@
 from functools import partial
+import os
+import yaml
 
 import numpy as np
 
-from ppo import PPOBuffer
-from vec_env import DummyVecEnv, SubprocVecEnv
+from .ppo import PPOBuffer
+from .vec_env import DummyVecEnv, SubprocVecEnv
+
+def get_save_paths(args):
+    dir_name = os.path.join(args["agent"]["save_dir"], args["agent"]["model_name"])
+    return dir_name, f"{os.path.join(dir_name, args['agent']['algo'])}.pt"
+
+def save_agent(dir_name, args, agent):
+    if dir_name is None:
+        dir_name, agent_path = get_save_paths(args)
+    else:
+        agent_path = f"{os.path.join(dir_name, args['agent']['algo'])}.pt"
+    os.makedirs(dir_name, exist_ok=True)
+    args_path = os.path.join(dir_name, "config.yaml")
+    agent.save(agent_path)
+    with open(args_path, "w") as f:
+        f.write(yaml.dump(args, default_flow_style=False))
+
+def load_agent(dir_name, args, agent):
+    if dir_name is None:
+        _, agent_path = get_save_paths(args)
+    else:
+        agent_path = os.path.join(dir_name, args["agent"]["algo"] + ".pt")
+    file_exists = os.path.isfile(agent_path)
+    resume = ("resume" in args) and args["resume"]
+    if resume and file_exists:
+        agent.load(agent_path)
+    elif file_exists and not resume:
+        raise Exception("A model exists at the save path. Use -r to resume training.")
+    elif resume and not file_exists:
+        raise Exception("Resume flag specified, but no model found.")
 
 
 def pretty_dict(d, float_fmt="%.6f"):

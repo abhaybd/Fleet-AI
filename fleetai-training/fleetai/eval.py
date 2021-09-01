@@ -7,8 +7,8 @@ import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 
-from util import pretty_dict
-from battleship_util import create_agent_from_args, create_env_fn, run_eval
+from .util import pretty_dict
+from .battleship_util import create_agent_from_args, create_env_fn, run_eval
 
 
 def parse_args():

@@ -2,7 +2,7 @@ import torch
 from torch.distributions import Categorical
 from torch.distributions.utils import logits_to_probs
 
-from actor_critic import ActorBase, create_network
+from .actor_critic import ActorBase, create_network
 
 
 class BattleshipActor(ActorBase):

@@ -4,7 +4,7 @@ import os
 import torch
 import yaml
 
-from battleship_util import load_agent_from_args, create_env_fn
+from .battleship_util import load_agent_from_args, create_env_fn
 
 
 def parse_args():
