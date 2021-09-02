@@ -1,7 +1,10 @@
 from functools import partial
 import os
 import yaml
+import json
+from datetime import datetime
 
+from tensorboardX import SummaryWriter
 import numpy as np
 
 from .ppo import PPOBuffer
@@ -9,6 +12,31 @@ from .vec_env import DummyVecEnv, SubprocVecEnv
 
 def get_or_else(d, key, default):
     return d[key] if key in d else default
+
+def create_writer(args):
+    if get_or_else(args["logging"], "log_to_comet", False):
+        return create_comet_writer(args)
+    else:
+        return create_disk_or_gcp_writer(args)
+
+def create_disk_or_gcp_writer(args):
+    if "log_dir" in args:
+        writer = SummaryWriter(log_dir=args["log_dir"])
+    else:
+        log_base_dir = get_or_else(args["logging"], "log_base_dir", "runs")
+        log_dir_name = datetime.now().strftime("%b%d_%H%M%S") + "_" + args["agent"]["model_name"]
+        log_dir = log_base_dir + "/" + log_dir_name # don't use join since windows can do / but GCP can't do \
+        writer = SummaryWriter(log_dir=log_dir)
+        args["log_dir"] = log_dir
+    return writer
+
+def create_comet_writer(args):
+    comet_env_var = "COMET_APPLICATION_CREDENTIALS"
+    assert comet_env_var in os.environ, "Comet Application Credentials not set!"
+    with open(os.environ[comet_env_var]) as f:
+        comet_config = json.load(f)
+        comet_config["disabled"] = False
+        return SummaryWriter(comet_config=comet_config, write_to_disk=False)
 
 def get_save_paths(args):
     dir_name = os.path.join(args["agent"]["save_dir"], args["agent"]["model_name"])

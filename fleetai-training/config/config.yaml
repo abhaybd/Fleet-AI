@@ -14,6 +14,11 @@ env:
   latent_var_precision: 16
   ship_sizes: [2, 3, 3, 4, 5]
 
+logging:
+  disabled: false
+  log_to_comet: true
+  log_base_dir: runs
+
 eval:
   eval_interval: 5
   num_ep: 5
@@ -37,4 +42,3 @@ training:
   total_steps: 5000
   train_samples: 4096
   use_gpu: true
-  log_base_dir: runs

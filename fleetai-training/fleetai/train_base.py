@@ -1,17 +1,19 @@
 import sys
 import argparse
 from itertools import chain
-from datetime import datetime
 
 import numpy as np
-import torch
 from tensorboardX import SummaryWriter
 
 from .vec_env import DummyVecEnv, SubprocVecEnv
 
-from .util import collect_trajectories_vec_env, pretty_dict, get_or_else
+from .dummy_writer import DummyWriter
+from .util import collect_trajectories_vec_env, pretty_dict, get_or_else, \
+    create_writer as create_writer_default
 from .battleship_util import create_agent_from_args, create_env_fn, run_eval
 
+# import last so comet stuff can happen beforehand
+import torch
 
 def parse_args(load_config):
     parser = argparse.ArgumentParser()
@@ -25,7 +27,24 @@ def parse_args(load_config):
     return config
 
 
-def train(save_agent, load_agent, load_config):
+def log_hyper_parameters(writer: SummaryWriter, args):
+    def flatten_dict(source_dict, dest_dict):
+        for key, value in source_dict.items():
+            if isinstance(value, dict):
+                flatten_dict(value, dest_dict)
+            else:
+                dest_dict[key] = value
+    hparams = {}
+    flatten_dict(args["training"], hparams)
+    hparams.pop("gpu_idx", None)
+    hparams.pop("use_gpu", None)
+    hparams.pop("seed", None)
+    hparams.pop("save_interval", None)
+    hparams["latent_var_precision"] = args["env"]["latent_var_precision"]
+    writer.add_hparams(hparam_dict=hparams, metric_dict={})
+
+
+def train(save_agent, load_agent, load_config, create_writer=create_writer_default):
     args = parse_args(load_config)
 
     np.random.seed(args["training"]["seed"])
@@ -49,40 +68,33 @@ def train(save_agent, load_agent, load_config):
     agent = create_agent_from_args(device, args, env)
     load_agent(args, agent)
 
-    if "log_dir" in args:
-        writer = SummaryWriter(log_dir=args["log_dir"])
-    else:
-        log_base_dir = get_or_else(args["training"], "log_base_dir", "runs")
-        log_dir_name = datetime.now().strftime("%b%d_%H%M%S") + "_" + args["agent"]["model_name"]
-        log_dir = log_base_dir + "/" + log_dir_name # don't use join since windows can do / but GCP can't do \
-        writer = SummaryWriter(log_dir=log_dir)
-        args["log_dir"] = log_dir
+    with (DummyWriter() if get_or_else(args["logging"], "disabled", False) else create_writer(args)) as writer:
+        log_hyper_parameters(writer, args)
+        save_interval = args["training"]["save_interval"]
+        eval_interval = args["eval"]["eval_interval"]
 
-    save_interval = args["training"]["save_interval"]
-    eval_interval = args["eval"]["eval_interval"]
+        save_agent(args, agent)
+        while agent.total_it < args["training"]["total_steps"]:
+            sample, rollout_info = collect_trajectories_vec_env(env, args["training"]["train_samples"], device,
+                                                                agent.select_action, agent.get_value,
+                                                                max_steps=args["env"]["max_steps"],
+                                                                policy_accepts_batch=False)
+            train_info = agent.train(sample, actor_steps=args["training"]["ppo"]["actor_steps"],
+                                     critic_steps=args["training"]["ppo"]["critic_steps"])
 
-    save_agent(args, agent)
-    while agent.total_it < args["training"]["total_steps"]:
-        sample, rollout_info = collect_trajectories_vec_env(env, args["training"]["train_samples"], device,
-                                                            agent.select_action, agent.get_value,
-                                                            max_steps=args["env"]["max_steps"],
-                                                            policy_accepts_batch=False)
-        train_info = agent.train(sample, actor_steps=args["training"]["ppo"]["actor_steps"],
-                                 critic_steps=args["training"]["ppo"]["critic_steps"])
+            for name, val in chain(train_info.items(), rollout_info.items()):
+                writer.add_scalar(f"Train/{name}", val, agent.total_it)
+            print(f"{agent.total_it} - {pretty_dict({**train_info, **rollout_info})}")
 
-        for name, val in chain(train_info.items(), rollout_info.items()):
-            writer.add_scalar(f"Train/{name}", val, agent.total_it)
-        print(f"{agent.total_it} - {pretty_dict({**train_info, **rollout_info})}")
+            # launch eval
+            if eval_interval != -1 and agent.total_it % eval_interval == 0:
+                eval_info = run_eval(env_fn, agent.actor, args["eval"]["num_ep"], args["env"]["max_steps"])
+                for name, val in eval_info.items():
+                    writer.add_scalar(f"Eval/{name}", val, agent.total_it)
+                print(f"Evaluation - {pretty_dict(eval_info)}")
 
-        # launch eval
-        if eval_interval != -1 and agent.total_it % eval_interval == 0:
-            eval_info = run_eval(env_fn, agent.actor, args["eval"]["num_ep"], args["env"]["max_steps"])
-            for name, val in eval_info.items():
-                writer.add_scalar(f"Eval/{name}", val, agent.total_it)
-            print(f"Evaluation - {pretty_dict(eval_info)}")
-
-        if save_interval != -1 and agent.total_it % save_interval == 0:
-            save_agent(args, agent)
-    save_agent(args, agent)
-    env.close()
-    print("Finished training!")
+            if save_interval != -1 and agent.total_it % save_interval == 0:
+                save_agent(args, agent)
+        save_agent(args, agent)
+        env.close()
+        print("Finished training!")

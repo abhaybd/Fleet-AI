@@ -9,3 +9,4 @@ google-cloud-storage~=1.42.0
 parse~=1.19.0
 tensorboardX~=2.4
 crc32c~=2.2
+comet-ml~=3.15.3
