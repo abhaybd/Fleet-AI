@@ -14,12 +14,13 @@ class _Ship(object):
 
 class BattleshipEnv(gym.Env):
     def __init__(self, observation_space="flat-ships", action_space="coords", board_width=10, board_height=10,
-                 ships=(1, 2, 3, 4, 5)):
+                 ships=(1, 2, 3, 4, 5), latent_var_precision=8):
         self.board = np.zeros((board_height, board_width), dtype=bool)
         self.ship_lens = sorted(ships)
         self.shots = np.zeros_like(self.board, dtype=bool)
         self.observation_space_type = observation_space
         self.action_space_type = action_space
+        self.latent_var_precision = latent_var_precision
         self.window = None
         self.ships = None
 
@@ -30,12 +31,19 @@ class BattleshipEnv(gym.Env):
         else:
             raise Exception(f"Unrecognized action space {action_space}")
 
-        if observation_space == "flat":
-            self.observation_space = gym.spaces.MultiBinary(2 * board_height * board_width)
-        elif observation_space == "flat-ships":
-            self.observation_space = gym.spaces.MultiBinary(2 * board_height * board_width + len(ships))
-        else:
-            raise Exception(f"Unrecognized observation space {observation_space}")
+        allowed_parts = {"flat", "ships", "latent"}
+        parts = observation_space.split("-")
+        assert len(set(parts)) == len(parts), "No repeated parts in observation space!"
+        assert all(p in allowed_parts for p in parts), "Unrecognized part in " + observation_space
+        parts = set(parts)
+        state_dim = 0
+        if "flat" in parts:
+            state_dim += 2 * board_height * board_width
+        if "ships" in parts:
+            state_dim += len(ships)
+        if "latent" in parts:
+            state_dim += latent_var_precision
+        self.observation_space = gym.spaces.MultiBinary(state_dim)
         self.reset()
 
     def _is_sunk(self, ship: _Ship):
@@ -45,10 +53,16 @@ class BattleshipEnv(gym.Env):
     def _observe(self):
         hits = (self.board & self.shots).astype(np.int8)
         misses = (~self.board & self.shots).astype(np.int8)
-        obs = np.hstack((misses.flatten(), hits.flatten()))
+        obs = np.empty(0, dtype=np.int8)
+        if "flat" in self.observation_space_type:
+            misses_hits = np.hstack((misses.flatten(), hits.flatten()))
+            obs = np.hstack((obs, misses_hits))
         if "ships" in self.observation_space_type:
             ship_obs = np.array([self._is_sunk(ship) for ship in self.ships], dtype=np.int8)
             obs = np.hstack((obs, ship_obs))
+        if "latent" in self.observation_space_type:
+            bits = (np.random.random(self.latent_var_precision) >= 0.5).astype(np.int8)
+            obs = np.hstack((obs, bits))
         return obs
 
     def _done(self):

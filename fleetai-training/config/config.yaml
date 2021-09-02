@@ -1,15 +1,17 @@
 agent:
   algo: ppo
-  model_name: PPO_flat-ships_flat_new-ships_hi-discount
+  model_name: PPO_flat-ships-latent_flat_discount-0.7
   actor_type: disc
   save_dir: models
+  layers: [256, 256]
 
 env:
   max_steps: 200
-  state_space: flat-ships
+  state_space: flat-ships-latent
   action_space: flat
   board_width: 10
   board_height: 10
+  latent_var_precision: 16
   ship_sizes: [2, 3, 3, 4, 5]
 
 eval:
@@ -18,7 +20,7 @@ eval:
   seed: 2021
 
 training:
-  discount: 0.97
+  discount: 0.7
   gpu_idx: 0
   num_procs: 4
   ppo:

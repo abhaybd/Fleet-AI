@@ -18,7 +18,7 @@ The deep RL algorithm used is a custom implementation of [PPO](https://spinningu
 
 Unless otherwise specified, the following commands are run from the `fleetai-training` folder.
 
-You can train a model with `python -m fleetai.train -c config/config.yaml`. Progress can be monitored with `tensorboard ---logdir runs`.
+You can train a model with `python -m fleetai.train -c config/config.yaml`. Progress can be monitored with `tensorboard --logdir runs`.
 
 After a model is trained, you can evaluate it using `python -m fleetai.eval [path to model dir]`. Run `python -m fleetai.eval -h` to view the available options.
 
