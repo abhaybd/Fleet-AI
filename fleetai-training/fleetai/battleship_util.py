@@ -5,7 +5,7 @@ from .actor_critic import MultiDiscActor, Critic
 
 from .BattleshipActor import BattleshipActor
 from .env import BattleshipEnv
-from .util import run_evaluation_seq
+from .util import run_evaluation_seq, get_or_else
 
 
 def run_eval(env_fn, actor: BattleshipActor, n_ep, max_steps, render_callback=None, reduce_info=True):
@@ -33,9 +33,6 @@ def create_env_fn(args):
                                  action_space=args["env"]["action_space"],
                                  latent_var_precision=latent_var_precision,
                                  ships=sizes, board_height=board_height, board_width=board_width)
-
-def get_or_else(d, key, default):
-    return d[key] if key in d else default
 
 def create_agent_from_args(device, args, env):
     args_training = args["training"]

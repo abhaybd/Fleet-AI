@@ -37,3 +37,4 @@ training:
   total_steps: 5000
   train_samples: 4096
   use_gpu: true
+  log_base_dir: runs

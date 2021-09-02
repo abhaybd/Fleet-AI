@@ -7,6 +7,9 @@ import numpy as np
 from .ppo import PPOBuffer
 from .vec_env import DummyVecEnv, SubprocVecEnv
 
+def get_or_else(d, key, default):
+    return d[key] if key in d else default
+
 def get_save_paths(args):
     dir_name = os.path.join(args["agent"]["save_dir"], args["agent"]["model_name"])
     return dir_name, f"{os.path.join(dir_name, args['agent']['algo'])}.pt"

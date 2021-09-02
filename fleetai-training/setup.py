@@ -1,7 +1,8 @@
 from setuptools import setup
 
 req_packages = ["gym==0.19.0", "numpy==1.21.2", "PyYAML==5.4.1", "scipy==1.7.1",
-                "tensorboard~=2.6.0", "parse~=1.19.0"]
+                "parse~=1.19.0", "tensorboardX~=2.4",
+                "crc32c~=2.2"]
 
 setup(
     name="fleetai",

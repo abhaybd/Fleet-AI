@@ -1,14 +1,15 @@
 import sys
 import argparse
 from itertools import chain
+from datetime import datetime
 
 import numpy as np
 import torch
-from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
 
 from .vec_env import DummyVecEnv, SubprocVecEnv
 
-from .util import collect_trajectories_vec_env, pretty_dict
+from .util import collect_trajectories_vec_env, pretty_dict, get_or_else
 from .battleship_util import create_agent_from_args, create_env_fn, run_eval
 
 
@@ -51,8 +52,11 @@ def train(save_agent, load_agent, load_config):
     if "log_dir" in args:
         writer = SummaryWriter(log_dir=args["log_dir"])
     else:
-        writer = SummaryWriter(comment=f"_{args['agent']['model_name']}")
-        args["log_dir"] = writer.log_dir
+        log_base_dir = get_or_else(args["training"], "log_base_dir", "runs")
+        log_dir_name = datetime.now().strftime("%b%d_%H%M%S") + "_" + args["agent"]["model_name"]
+        log_dir = log_base_dir + "/" + log_dir_name # don't use join since windows can do / but GCP can't do \
+        writer = SummaryWriter(log_dir=log_dir)
+        args["log_dir"] = log_dir
 
     save_interval = args["training"]["save_interval"]
     eval_interval = args["eval"]["eval_interval"]
