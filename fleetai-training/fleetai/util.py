@@ -7,6 +7,7 @@ from datetime import datetime
 from tensorboardX import SummaryWriter
 import numpy as np
 
+import fleetai
 from .ppo import PPOBuffer
 from .vec_env import DummyVecEnv, SubprocVecEnv
 
@@ -32,11 +33,17 @@ def create_disk_or_gcp_writer(args):
 
 def create_comet_writer(args):
     comet_env_var = "COMET_APPLICATION_CREDENTIALS"
-    assert comet_env_var in os.environ, "Comet Application Credentials not set!"
-    with open(os.environ[comet_env_var]) as f:
-        comet_config = json.load(f)
-        comet_config["disabled"] = False
-        return SummaryWriter(comet_config=comet_config, write_to_disk=False)
+    if comet_env_var in os.environ:
+        path = os.environ[comet_env_var]
+    else:
+        path = os.path.join(os.path.dirname(fleetai.__file__), "static", "comet.json")
+    try:
+        with open(path) as f:
+            comet_config = json.load(f)
+            comet_config["disabled"] = False
+            return SummaryWriter(comet_config=comet_config, write_to_disk=False)
+    except FileNotFoundError:
+        raise Exception("Comet Application Credentials not set!")
 
 def get_save_paths(args):
     dir_name = os.path.join(args["agent"]["save_dir"], args["agent"]["model_name"])

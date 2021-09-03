@@ -64,7 +64,7 @@ For writing to Comet, ensure that `log_to_comet: true` is set. The value of `log
 - `workspace` (typically your username)
 - `project_name`
 
-Then, set the `COMET_APPLICATION_CREDENTIALS` environment variable to point to the newly created file.
+Then, set the `COMET_APPLICATION_CREDENTIALS` environment variable to point to the newly created file. Alternatively, you can also place the JSON file at `fleetai/static/comet.json`. If both are provided, the environment variable will be preferred.
 
 #### Viewing logs
 
