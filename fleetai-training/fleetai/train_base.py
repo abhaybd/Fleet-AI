@@ -28,7 +28,7 @@ def parse_args(load_config):
     return config
 
 
-def log_metrics(writer: SummaryWriter, args, eval_metrics):
+def log_hparams(writer: SummaryWriter, args):
     def flatten_dict(source_dict, dest_dict):
         for key, value in source_dict.items():
             if isinstance(value, dict):
@@ -42,7 +42,7 @@ def log_metrics(writer: SummaryWriter, args, eval_metrics):
     hparams.pop("seed", None)
     hparams.pop("save_interval", None)
     hparams["latent_var_precision"] = args["env"]["latent_var_precision"]
-    writer.add_hparams(hparam_dict=hparams, metric_dict=eval_metrics)
+    writer.add_hparams(hparam_dict=hparams, metric_dict={})
 
 
 def train(save_agent, load_agent, load_config, create_writer=create_writer_default):
@@ -106,7 +106,7 @@ def train(save_agent, load_agent, load_config, create_writer=create_writer_defau
                                    seed=args["eval"]["seed"],
                                    histogram=True,
                                    fig_callback=lambda fig: writer.add_figure("Metrics Histogram", fig))
-            log_metrics(writer, args, final_eval_info)
+            for name, val in final_eval_info.items():
+                writer.add_scalar(f"Metric/{name}", val)
             print("Finished evaluating!")
-        else:
-            log_metrics(writer, args, {})
+        log_hparams(writer, args)
