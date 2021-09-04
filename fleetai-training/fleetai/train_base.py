@@ -11,6 +11,7 @@ from .dummy_writer import DummyWriter
 from .util import collect_trajectories_vec_env, pretty_dict, get_or_else, \
     create_writer as create_writer_default
 from .battleship_util import create_agent_from_args, create_env_fn, run_eval
+from .eval import eval
 
 # import last so comet stuff can happen beforehand
 import torch
@@ -27,7 +28,7 @@ def parse_args(load_config):
     return config
 
 
-def log_hyper_parameters(writer: SummaryWriter, args):
+def log_metrics(writer: SummaryWriter, args, eval_metrics):
     def flatten_dict(source_dict, dest_dict):
         for key, value in source_dict.items():
             if isinstance(value, dict):
@@ -41,7 +42,7 @@ def log_hyper_parameters(writer: SummaryWriter, args):
     hparams.pop("seed", None)
     hparams.pop("save_interval", None)
     hparams["latent_var_precision"] = args["env"]["latent_var_precision"]
-    writer.add_hparams(hparam_dict=hparams, metric_dict={})
+    writer.add_hparams(hparam_dict=hparams, metric_dict=eval_metrics)
 
 
 def train(save_agent, load_agent, load_config, create_writer=create_writer_default):
@@ -69,7 +70,6 @@ def train(save_agent, load_agent, load_config, create_writer=create_writer_defau
     load_agent(args, agent)
 
     with (DummyWriter() if get_or_else(args["logging"], "disabled", False) else create_writer(args)) as writer:
-        log_hyper_parameters(writer, args)
         save_interval = args["training"]["save_interval"]
         eval_interval = args["eval"]["eval_interval"]
 
@@ -98,3 +98,15 @@ def train(save_agent, load_agent, load_config, create_writer=create_writer_defau
         save_agent(args, agent)
         env.close()
         print("Finished training!")
+        if get_or_else(args["eval"], "num_eval_after", -1) > 0:
+            print("Running evaluation...")
+            final_eval_info = eval(agent, args,
+                                   num_eval=args["eval"]["num_eval_after"],
+                                   max_steps=args["env"]["max_steps"],
+                                   seed=args["eval"]["seed"],
+                                   histogram=True,
+                                   fig_callback=lambda fig: writer.add_figure("Metrics Histogram", fig))
+            log_metrics(writer, args, final_eval_info)
+            print("Finished evaluating!")
+        else:
+            log_metrics(writer, args, {})

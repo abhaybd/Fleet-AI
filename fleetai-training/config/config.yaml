@@ -23,6 +23,7 @@ eval:
   eval_interval: 5
   num_ep: 5
   seed: 2021
+  num_eval_after: 10000
 
 training:
   discount: 0.7

@@ -203,10 +203,14 @@ def run_evaluation(env_fn, n_trajectories, policy, max_steps=500, render_callbac
         finished = finished | dones | (steps == max_steps)
         if render_callback is not None:
             render_callback(env)
-    return dict(sum_rew_avg=np.mean(sum_rews), sum_rew_std=np.std(sum_rews),
-                sum_rew_min=np.min(sum_rews), sum_rew_max=np.max(sum_rews),
-                traj_len_avg=np.mean(steps), last_rew_avg=np.mean(last_rews),
-                norm_rew_avg=np.mean(np.array(sum_rews)/np.array(steps)))
+    return reduce_eval(steps, sum_rews, last_rews)
+
+
+def reduce_eval(traj_lens, traj_rews, last_rews):
+    return dict(sum_rew_avg=np.mean(traj_rews), sum_rew_std=np.std(traj_rews),
+                sum_rew_min=np.min(traj_rews), sum_rew_max=np.max(traj_rews),
+                traj_len_avg=np.mean(traj_lens), last_rew_avg=np.mean(last_rews),
+                norm_rew_avg=np.mean(np.array(traj_rews)/np.array(traj_lens)))
 
 
 def run_evaluation_seq(env_fn, n_trajectories, policy, max_steps=500, render_callback=None, reduce_info=True):
@@ -232,9 +236,6 @@ def run_evaluation_seq(env_fn, n_trajectories, policy, max_steps=500, render_cal
     if render_callback is not None:
         env.close()
     if reduce_info:
-        return dict(sum_rew_avg=np.mean(traj_rews), sum_rew_std=np.std(traj_rews),
-                    sum_rew_min=np.min(traj_rews), sum_rew_max=np.max(traj_rews),
-                    traj_len_avg=np.mean(traj_lens), last_rew_avg=np.mean(last_rews),
-                    norm_rew_avg=np.mean(np.array(traj_rews)/np.array(traj_lens)))
+        return reduce_eval(traj_lens, traj_rews, last_rews)
     else:
         return dict(traj_lens=traj_lens, traj_rews=traj_rews, last_rews=last_rews)
