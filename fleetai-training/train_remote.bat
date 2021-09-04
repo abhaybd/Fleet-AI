@@ -25,5 +25,6 @@ set IMAGE_URI=gcr.io/cloud-ml-public/training/pytorch-xla.1-7
 set PACKAGE_PATH=./fleetai
 set REGION=us-central1
 set MODULE_NAME=fleetai.train_gcp
+set SCALE_TIER=BASIC
 
-call gcloud ai-platform jobs submit training %JOB_NAME% --job-dir %JOB_DIR% --region %REGION% --master-image-uri %IMAGE_URI% --scale-tier BASIC --module-name %MODULE_NAME% --package-path %PACKAGE_PATH% -- --config %REMOTE_CFG_PATH%
+call gcloud ai-platform jobs submit training %JOB_NAME% --job-dir %JOB_DIR% --region %REGION% --master-image-uri %IMAGE_URI% --scale-tier %SCALE_TIER% --module-name %MODULE_NAME% --package-path %PACKAGE_PATH% -- --config %REMOTE_CFG_PATH%
