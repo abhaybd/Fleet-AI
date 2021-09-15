@@ -5,3 +5,12 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+#info {
+  margin-bottom: 0;
+}
+
+#instructions {
+  font-size: 20px;
+  margin-top: 0;
+}

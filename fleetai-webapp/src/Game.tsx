@@ -84,10 +84,11 @@ export default class Game extends React.Component<GameProps, GameState> {
         return (
             <div id="game">
                 <div id="info">
-                    <p>
+                    <p id="info">
                         {info}
                     </p>
-                    {this.state.humanWon !== null ? <button onClick={() => this.props.reset()}>New game</button> : null}
+                    {this.state.humanWon !== null ? <button onClick={() => this.props.reset()}>New game</button> :
+                        <p id="instructions">Click a square to shoot</p>}
                 </div>
                 <div id="boards">
                     <div id="bot-ships">
