@@ -1,6 +1,6 @@
 import React from "react";
 import ReactGA from "react-ga";
-import {Coord, Ship, SHIP_LENS} from "./util";
+import {allSunk, Coord, Ship} from "./util";
 import Board from "./Board";
 import "./Game.css";
 import BattleshipActor from "./BattleshipActor";
@@ -50,8 +50,7 @@ export default class Game extends React.Component<GameProps, GameState> {
             // check winner
             let shots = prevState.humanTurn ? this.props.humanShots : this.props.botShots;
             let ships = prevState.humanTurn ? this.props.botShips : this.props.humanShips;
-            let numHits = shots.filter(coord => ships.some(s => s.collides(coord))).length;
-            if (numHits === SHIP_LENS.reduce((a,b) => a+b)) {
+            if (allSunk(ships, shots)) {
                 ReactGA.event({
                     category: "Game",
                     action: "Finished game",

@@ -3,6 +3,8 @@ import ReactGA from "react-ga";
 import {Coord, randomShips, Ship} from "./util";
 import BoardSetup from "./BoardSetup";
 import Game from "./Game";
+import simulateGame from "./SoloSim";
+import BattleshipActor from "./BattleshipActor";
 
 interface GameContainerState {
     humanShips: Ship[] | null;
@@ -11,7 +13,26 @@ interface GameContainerState {
     botShots: Coord[]; // shots taken by bot
 }
 
-export default class GameContainer extends React.Component<{}, GameContainerState>{
+// Returns an array of ships that the AI took the longest to sink
+async function getBestShips(n: number) {
+    let bestShips = null;
+    let bestGame = 0; // guaranteed lower bound
+    const actor = new BattleshipActor();
+    let lens = [];
+    for (let i = 0; i < n; i++) {
+        let ships = randomShips();
+        let gameLen = await simulateGame(actor, ships);
+        lens.push(gameLen);
+        if (gameLen > bestGame) {
+            bestShips = ships;
+            bestGame = gameLen;
+        }
+    }
+    console.log(lens);
+    return bestShips as Ship[];
+}
+
+export default class GameContainer extends React.Component<{}, GameContainerState> {
     constructor(props: {} | Readonly<{}>) {
         super(props)
         this.state = {humanShots: [], humanShips: null, botShips: null, botShots: []};
@@ -40,7 +61,10 @@ export default class GameContainer extends React.Component<{}, GameContainerStat
             category: "Game",
             action: "Start Game"
         });
-        this.setState({humanShips: ships, botShips: randomShips()});
+        this.setState({humanShips: ships},
+            () => getBestShips(5).then(botShips => this.setState({humanShips: ships, botShips: botShips}))
+        )
+
     }
 
     reset() {
@@ -67,6 +91,8 @@ export default class GameContainer extends React.Component<{}, GameContainerStat
         let content;
         if (!this.state.humanShips) {
             content = <BoardSetup setHumanBoard={this.startGame}/>;
+        } else if (!this.state.botShips) {
+            content = <p>Loading...</p>
         } else {
             content = <Game humanShips={this.state.humanShips} botShips={this.state.botShips as Ship[]}
                             humanShots={this.state.humanShots} botShots={this.state.botShots}

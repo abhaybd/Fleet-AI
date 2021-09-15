@@ -11,6 +11,11 @@ export class Coord {
     }
 }
 
+export function allSunk(ships: Ship[], shots: Coord[]) {
+    let numHits = shots.filter(coord => ships.some(s => s.collides(coord))).length;
+    return numHits === SHIP_LENS.reduce((a,b) => a+b)
+}
+
 export function inRange(val: number, bound1: number, bound2: number) {
     const lo = Math.min(bound1, bound2);
     const hi = Math.max(bound1, bound2);
